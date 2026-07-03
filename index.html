@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品需求提报 - 浙江省</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  color: #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== Header ===== */
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15);
+}
+.header h1 { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+
+/* ===== Main Container ===== */
+.container {
+  width: 100%;
+  max-width: 750px;
+  margin: 40px 20px;
+}
+
+/* ===== Card ===== */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 32px 36px;
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px; height: 18px;
+  background: #0f3460;
+  border-radius: 2px;
+}
+
+/* ===== Form ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+.form-group label .required { color: #e74c3c; margin-left: 2px; }
+.form-group input,
+.form-group select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+  font-family: inherit;
+  background: #fff;
+}
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #0f3460;
+  box-shadow: 0 0 0 3px rgba(15,52,96,.08);
+}
+.form-group select { cursor: pointer; }
+
+/* product stock hint */
+.stock-warning {
+  font-size: 12px;
+  color: #e74c3c;
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  padding: 11px 28px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: #0f3460; color: #fff; }
+.btn-primary:hover { background: #1a4a7a; }
+.btn-outline {
+  background: #fff;
+  color: #0f3460;
+  border: 1px solid #0f3460;
+}
+.btn-outline:hover { background: #f0f4ff; }
+
+.form-actions {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 28px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  z-index: 9999;
+  animation: slideDown .3s ease;
+  font-size: 14px;
+}
+.toast.success { background: #27ae60; }
+.toast.error { background: #e74c3c; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ===== Success State ===== */
+.success-card {
+  display: none;
+  text-align: center;
+  padding: 20px 0;
+}
+.success-card .checkmark {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: #e6f7ee;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+.success-card h3 { font-size: 20px; color: #27ae60; margin-bottom: 8px; }
+.success-card p { color: #888; margin-bottom: 24px; }
+
+/* ===== Footer ===== */
+.footer {
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+  margin-top: 16px;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<div class="header">
+  <h1>📱 产品需求提报 · 浙江省</h1>
+</div>
+
+<!-- ===== Form Card ===== -->
+<div class="container">
+  <div class="card" id="formCard">
+    <div class="card-title">需求提报</div>
+    <form id="demandForm" onsubmit="submitDemand(event)">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>地市<span class="required">*</span></label>
+          <select id="city" required>
+            <option value="">请选择地市</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>填报人<span class="required">*</span></label>
+          <input type="text" id="reporter" placeholder="请输入姓名" required>
+        </div>
+
+        <div class="form-group">
+          <label>渠道名称<span class="required">*</span></label>
+          <input type="text" id="channelName" placeholder="请输入渠道名称" required>
+        </div>
+
+        <div class="form-group">
+          <label>提货通路<span class="required">*</span></label>
+          <select id="deliveryChannel" required>
+            <option value="">请选择提货通路</option>
+            <option value="太力">太力</option>
+            <option value="移动">移动</option>
+            <option value="和动力">和动力</option>
+            <option value="天翼">天翼</option>
+            <option value="联通">联通</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>渠道八码<span class="required">*</span></label>
+          <input type="text" id="channelCode" placeholder="请输入8位数字编码" required maxlength="8" pattern="\d{8}" title="请输入8位数字编码">
+        </div>
+
+        <div class="form-group">
+          <label>产品名称<span class="required">*</span></label>
+          <select id="product" required onchange="onProductChange()">
+            <option value="">请选择产品</option>
+          </select>
+          <div class="stock-warning" id="productStockHint">⚠️ 该产品当前缺货</div>
+        </div>
+
+        <div class="form-group">
+          <label>产品数量<span class="required">*</span></label>
+          <input type="number" id="quantity" placeholder="请输入数量" required min="1" value="1">
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">✅ 提交需求</button>
+        <button type="button" class="btn btn-outline" onclick="resetForm()">🔄 重置</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Success state -->
+  <div class="card" id="successCard" style="display:none;">
+    <div class="success-card">
+      <div class="checkmark">✅</div>
+      <h3>提报成功！</h3>
+      <p id="successMsg"></p>
+      <button class="btn btn-primary" onclick="newSubmission()">📝 继续提报</button>
+    </div>
+  </div>
+
+  <div class="footer">浙江省产品需求提报系统</div>
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
+<script>
+// ==================== DATA STORE ====================
+var STORAGE_KEY_PRODUCTS = 'zhejiang_gtm_products';
+var STORAGE_KEY_RECORDS = 'zhejiang_gtm_records';
+
+var ZHEJIANG_CITIES = [
+  '杭州市', '宁波市', '温州市', '嘉兴市', '湖州市',
+  '绍兴市', '金华市', '衢州市', '舟山市', '台州市', '丽水市'
+];
+
+var DEFAULT_PRODUCTS = [
+  { name: '手机 A-100', inStock: true },
+  { name: '手机 A-200', inStock: true },
+  { name: '手机 A-300 Pro', inStock: true },
+  { name: '手机 B-100', inStock: true },
+  { name: '手机 B-200', inStock: false },
+  { name: '手机 C-100', inStock: true },
+  { name: '手机 C-200 Pro', inStock: true },
+  { name: '平板 D-100', inStock: true },
+  { name: '平板 D-200', inStock: false },
+  { name: '穿戴 E-100', inStock: true },
+  { name: '穿戴 E-200 Pro', inStock: true },
+  { name: '配件 F-100', inStock: true },
+];
+
+// ==================== INIT ====================
+function getProducts() {
+  var raw = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+  if (!raw) {
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
+    return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+  }
+  return JSON.parse(raw);
+}
+
+function getRecords() {
+  var raw = localStorage.getItem(STORAGE_KEY_RECORDS);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveRecords(records) {
+  localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records));
+}
+
+// ==================== TOAST ====================
+function showToast(msg, type) {
+  type = type || 'info';
+  var container = document.getElementById('toastContainer');
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity .3s';
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 2000);
+}
+
+// ==================== POPULATE SELECTS ====================
+function populateCitySelect() {
+  var sel = document.getElementById('city');
+  if (sel.options.length > 1) return;
+  ZHEJIANG_CITIES.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+function populateProductSelect() {
+  var sel = document.getElementById('product');
+  while (sel.options.length > 1) sel.remove(1);
+
+  var products = getProducts();
+  products.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.name;
+    opt.textContent = p.name + (p.inStock ? '' : ' [缺货]');
+    if (!p.inStock) {
+      opt.style.color = '#e74c3c';
+    }
+    sel.appendChild(opt);
+  });
+}
+
+function onProductChange() {
+  var sel = document.getElementById('product');
+  var hint = document.getElementById('productStockHint');
+  var products = getProducts();
+  var selectedName = sel.value;
+  var product = products.find(function(p) { return p.name === selectedName; });
+  if (product && !product.inStock) {
+    hint.style.display = 'flex';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+// ==================== FORM SUBMIT ====================
+function submitDemand(e) {
+  e.preventDefault();
+
+  var city = document.getElementById('city').value;
+  var reporter = document.getElementById('reporter').value.trim();
+  var channelName = document.getElementById('channelName').value.trim();
+  var deliveryChannel = document.getElementById('deliveryChannel').value;
+  var channelCode = document.getElementById('channelCode').value.trim();
+  var product = document.getElementById('product').value;
+  var quantity = parseInt(document.getElementById('quantity').value);
+
+  if (!/^\d{8}$/.test(channelCode)) {
+    showToast('渠道八码必须为8位数字', 'error');
+    return;
+  }
+
+  var products = getProducts();
+  var productObj = products.find(function(p) { return p.name === product; });
+  var inStock = productObj ? productObj.inStock : true;
+
+  var record = {
+    id: Date.now(),
+    time: new Date().toLocaleString('zh-CN'),
+    city: city,
+    reporter: reporter,
+    channelName: channelName,
+    deliveryChannel: deliveryChannel,
+    channelCode: channelCode,
+    product: product,
+    inStock: inStock,
+    quantity: quantity
+  };
+
+  var records = getRecords();
+  records.unshift(record);
+  saveRecords(records);
+
+  // Show success card
+  document.getElementById('formCard').style.display = 'none';
+  document.getElementById('successCard').style.display = 'block';
+  document.getElementById('successMsg').textContent =
+    '地市：' + city + ' | 产品：' + product + ' × ' + quantity +
+    (inStock ? '' : '（缺货产品）');
+}
+
+function resetForm() {
+  document.getElementById('demandForm').reset();
+  document.getElementById('productStockHint').style.display = 'none';
+}
+
+function newSubmission() {
+  document.getElementById('demandForm').reset();
+  document.getElementById('productStockHint').style.display = 'none';
+  document.getElementById('formCard').style.display = 'block';
+  document.getElementById('successCard').style.display = 'none';
+}
+
+// ==================== STARTUP ====================
+(function() {
+  populateCitySelect();
+  populateProductSelect();
+})();
+</script>
+</body>
+</html>
