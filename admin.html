@@ -157,7 +157,7 @@ var DEFAULT_PRODUCTS = [
 ];
 var productList = [];
 var demandList = [];
-var pendingDeleteId = null;
+var pendingDeleteFilter = null;
 
 function showToast(msg, type) {
   var c = document.getElementById('toastContainer');
@@ -179,11 +179,11 @@ function api(method, path, body) {
 }
 
 // ==================== MODAL ====================
-function openDeleteModal(id) { pendingDeleteId = id; document.getElementById('deleteModal').classList.add('show'); }
-function closeModal() { pendingDeleteId = null; document.getElementById('deleteModal').classList.remove('show'); }
+function openDeleteModal(filter) { pendingDeleteFilter = filter; document.getElementById('deleteModal').classList.add('show'); }
+function closeModal() { pendingDeleteFilter = null; document.getElementById('deleteModal').classList.remove('show'); }
 document.getElementById('deleteConfirmBtn').addEventListener('click', function() {
-  if (!pendingDeleteId) return;
-  api('DELETE', '/demands?id=eq.' + pendingDeleteId)
+  if (!pendingDeleteFilter) return;
+  api('DELETE', '/demands?' + pendingDeleteFilter)
     .then(function() { showToast('已删除', 'success'); loadAndRender(); closeModal(); })
     .catch(function(e) { showToast('删除失败', 'error'); });
 });
@@ -292,12 +292,15 @@ function restoreDefaults() {
 
 // ==================== DEMANDS ====================
 function loadAndRender() {
-  api('GET', '/demands?select=*&order=created_at.desc')
+  api('GET', '/demands?select=*')
     .then(function(data) {
       demandList = data || [];
       populateFilterCity();
       renderRecords();
       updateStats();
+    }).catch(function(e) {
+      console.error('加载记录失败:', e);
+      showToast('加载记录失败，请刷新重试', 'error');
     });
 }
 
@@ -334,14 +337,18 @@ function renderRecords() {
   list.forEach(function(r, i) {
     var tr = document.createElement('tr');
     if (!r.in_stock) tr.className = 'oos-row';
-    var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '';
+    var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
+    var filter = 'city=eq.' + encodeURIComponent(r.city) +
+      '&reporter=eq.' + encodeURIComponent(r.reporter) +
+      '&channel_code=eq.' + encodeURIComponent(r.channel_code) +
+      '&product=eq.' + encodeURIComponent(r.product);
     tr.innerHTML =
       '<td>' + (i+1) + '</td><td>' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
       '<td>' + escapeHTML(r.channel_name) + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
       '<td>' + escapeHTML(r.product) + '</td>' +
       '<td>' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
       '<td>' + r.quantity + '</td>' +
-      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(' + r.id + ')">删除</button></td>';
+      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(\'' + filter + '\')">删除</button></td>';
     tbody.appendChild(tr);
   });
 }
@@ -374,7 +381,7 @@ function exportToExcel() {
   if (demandList.length === 0) { showToast('无记录可导出', 'error'); return; }
   var data = [['序号','提报时间','地市','填报人','渠道名称','提货通路','渠道八码','产品名称','库存状态','产品数量']];
   demandList.forEach(function(r, i) {
-    var t = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '';
+    var t = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
     data.push([i+1, t, r.city, r.reporter, r.channel_name, r.delivery_channel, r.channel_code, r.product, r.in_stock ? '有库存' : '缺货', r.quantity]);
   });
   var wb = XLSX.utils.book_new();
@@ -389,7 +396,7 @@ function exportToExcel() {
 
 function clearRecords() {
   if (!confirm('确定清空所有提报记录？建议先导出Excel。')) return;
-  api('DELETE', '/demands?id=gt.0').then(function() { loadAndRender(); showToast('已清空', 'info'); });
+  api('DELETE', '/demands?city=not.is.null').then(function() { loadAndRender(); showToast('已清空', 'info'); });
 }
 
 function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
