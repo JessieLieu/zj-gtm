@@ -5,244 +5,87 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>产品需求提报系统 - 浙江省</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f0f2f5; min-height: 100vh; color: #1a1a2e; }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
-  background: #f0f2f5;
-  min-height: 100vh;
-  color: #1a1a2e;
-}
-
-/* ===== Header ===== */
 .header {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: #fff;
-  padding: 0 32px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  color: #fff; padding: 0 32px; height: 60px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 100;
   box-shadow: 0 2px 12px rgba(0,0,0,.15);
 }
 .header h1 { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
 .header-actions { display: flex; gap: 12px; }
 
-/* ===== Tabs ===== */
-.tabs {
-  display: flex;
-  gap: 0;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
-  padding: 0 32px;
-}
-.tab {
-  padding: 14px 28px;
-  cursor: pointer;
-  font-size: 15px;
-  color: #666;
-  border-bottom: 2px solid transparent;
-  transition: all .2s;
-  font-weight: 500;
-}
-.tab:hover { color: #0f3460; }
-.tab.active { color: #0f3460; border-bottom-color: #0f3460; font-weight: 600; }
-
-/* ===== Main Content ===== */
-.main {
-  max-width: 1100px;
-  margin: 24px auto;
-  padding: 0 24px;
-}
+.main { max-width: 1100px; margin: 24px auto; padding: 0 24px; }
 .panel { display: none; }
 .panel.active { display: block; }
 
-/* ===== Card ===== */
 .card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  padding: 28px 32px;
-  margin-bottom: 20px;
+  background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 28px 32px; margin-bottom: 20px;
 }
 .card-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 17px; font-weight: 600; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px;
 }
-.card-title::before {
-  content: '';
-  display: inline-block;
-  width: 4px; height: 18px;
-  background: #0f3460;
-  border-radius: 2px;
-}
+.card-title::before { content: ''; display: inline-block; width: 4px; height: 18px; background: #0f3460; border-radius: 2px; }
 
-/* ===== Form ===== */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
+.form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group.full { grid-column: 1 / -1; }
-.form-group.half { grid-column: span 2; }
-.form-group label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #444;
-}
+.form-group label { font-size: 13px; font-weight: 600; color: #444; }
 .form-group label .required { color: #e74c3c; margin-left: 2px; }
-.form-group input,
-.form-group select {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color .2s, box-shadow .2s;
-  outline: none;
-  font-family: inherit;
+.form-group input, .form-group select {
+  height: 40px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+  font-size: 14px; transition: border-color .2s, box-shadow .2s; outline: none; font-family: inherit;
 }
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #0f3460;
-  box-shadow: 0 0 0 3px rgba(15,52,96,.08);
+.form-group input:focus, .form-group select:focus {
+  border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,.08);
 }
 .form-group select { cursor: pointer; background: #fff; }
 
-/* product select with badges */
-.product-select-wrapper { position: relative; }
-.product-select-wrapper select { width: 100%; }
-
-.status-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  margin-left: 6px;
-}
-.status-badge.out-of-stock {
-  background: #fff2f0;
-  color: #e74c3c;
-  border: 1px solid #ffccc7;
-}
-
-/* ===== Buttons ===== */
 .btn {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .2s;
-  font-family: inherit;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  padding: 10px 24px; border: none; border-radius: 6px; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px;
 }
 .btn-primary { background: #0f3460; color: #fff; }
 .btn-primary:hover { background: #1a4a7a; }
+.btn-primary:disabled { background: #999; cursor: not-allowed; }
 .btn-success { background: #27ae60; color: #fff; }
 .btn-success:hover { background: #219a52; }
-.btn-warning { background: #f39c12; color: #fff; }
-.btn-warning:hover { background: #e08e0b; }
 .btn-danger { background: #e74c3c; color: #fff; }
 .btn-danger:hover { background: #c0392b; }
-.btn-outline {
-  background: #fff;
-  color: #0f3460;
-  border: 1px solid #0f3460;
-}
+.btn-outline { background: #fff; color: #0f3460; border: 1px solid #0f3460; }
 .btn-outline:hover { background: #f0f4ff; }
 .btn-sm { padding: 6px 14px; font-size: 12px; }
 
-/* ===== Table ===== */
+.nav-btn { color: #fff !important; border-color: rgba(255,255,255,.7) !important; font-weight: 700 !important; font-size: 13px !important; background: rgba(255,255,255,.12); }
+.nav-btn:hover { background: rgba(255,255,255,.25) !important; }
+
 .table-wrap { overflow-x: auto; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-thead th {
-  background: #fafafa;
-  padding: 12px 14px;
-  text-align: left;
-  font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #e8e8e8;
-  white-space: nowrap;
-}
-tbody td {
-  padding: 11px 14px;
-  border-bottom: 1px solid #f0f0f0;
-}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: #fafafa; padding: 12px 14px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e8e8e8; white-space: nowrap; }
+tbody td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; }
 tbody tr:hover { background: #f8f9ff; }
 .oos-row { background: #fff8f8; }
 .oos-row td { color: #999; }
-.oos-tag {
-  display: inline-block;
-  background: #e74c3c;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-}
+.oos-tag { display: inline-block; background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
 
-/* product management */
-.product-list { margin-bottom: 16px; }
-.inline-form {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
+.inline-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .inline-form .form-group { flex: 1; min-width: 140px; }
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-bottom: 8px;
-}
+.checkbox-group { display: flex; align-items: center; gap: 6px; padding-bottom: 8px; }
 .checkbox-group input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
 .checkbox-group label { cursor: pointer; font-size: 14px; }
 
-/* ===== Stats ===== */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
-}
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
 .stat-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  background: #fff; border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  display: flex; align-items: center; gap: 14px;
 }
-.stat-icon {
-  width: 44px; height: 44px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-}
+.stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
 .stat-icon.blue { background: #e8f0fe; color: #0f3460; }
 .stat-icon.green { background: #e6f7ee; color: #27ae60; }
 .stat-icon.orange { background: #fef3e2; color: #f39c12; }
@@ -250,449 +93,200 @@ tbody tr:hover { background: #f8f9ff; }
 .stat-value { font-size: 26px; font-weight: 700; }
 .stat-label { font-size: 12px; color: #888; margin-top: 2px; }
 
-/* ===== Toast ===== */
-.toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 28px;
-  border-radius: 8px;
-  color: #fff;
-  font-weight: 600;
-  z-index: 9999;
-  animation: slideDown .3s ease;
-  font-size: 14px;
-}
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 28px; border-radius: 8px; color: #fff; font-weight: 600; z-index: 9999; animation: slideDown .3s ease; font-size: 14px; }
 .toast.success { background: #27ae60; }
 .toast.error { background: #e74c3c; }
 .toast.info { background: #0f3460; }
-@keyframes slideDown {
-  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
+@keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
-/* ===== Modal ===== */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  z-index: 200;
-  justify-content: center;
-  align-items: center;
-}
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
-.modal {
-  background: #fff;
-  border-radius: 12px;
-  padding: 28px;
-  width: 440px;
-  max-width: 90vw;
-  box-shadow: 0 8px 40px rgba(0,0,0,.15);
-}
+.modal { background: #fff; border-radius: 12px; padding: 28px; width: 440px; max-width: 90vw; box-shadow: 0 8px 40px rgba(0,0,0,.15); }
 .modal h3 { margin-bottom: 18px; font-size: 18px; }
 .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-/* ===== Footer info ===== */
-.footer-info {
-  text-align: center;
-  color: #aaa;
-  font-size: 12px;
-  padding: 16px;
-}
-
-/* ===== Search/Filter bar ===== */
-.bar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-.bar input, .bar select {
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  font-size: 13px;
-  outline: none;
-  font-family: inherit;
-}
+.bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.bar input, .bar select { height: 36px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; outline: none; font-family: inherit; }
 .bar input:focus, .bar select:focus { border-color: #0f3460; }
 .bar .spacer { flex: 1; }
-
-/* empty state */
-.empty-state {
-  text-align: center;
-  padding: 48px 20px;
-  color: #bbb;
-}
-.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state { text-align: center; padding: 48px 20px; color: #bbb; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.footer-info { text-align: center; color: #aaa; font-size: 12px; padding: 16px; }
 </style>
 </head>
 <body>
 
-<!-- ===== Header ===== -->
 <div class="header">
-  <h1>📱 产品需求提报系统 · 浙江省</h1>
+  <h1>📱 管理后台 · 浙江省</h1>
   <div class="header-actions">
-    <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="switchTab('submit')" id="nav-submit">📝 需求提报</button>
-    <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="switchTab('products')" id="nav-products">📦 产品管理</button>
-    <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="switchTab('records')" id="nav-records">📋 提报记录</button>
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('submit')">📝 需求提报</button>
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('products')">📦 产品管理</button>
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('records')">📋 提报记录</button>
   </div>
 </div>
 
-<!-- ===== Main ===== -->
 <div class="main">
 
-  <!-- ========== TAB 1: 需求提报 ========== -->
+  <!-- ===== TAB: 需求提报 ===== -->
   <div class="panel active" id="panel-submit">
     <div class="card">
       <div class="card-title">新增需求提报</div>
       <form id="demandForm" onsubmit="submitDemand(event)">
         <div class="form-grid">
-
-          <div class="form-group">
-            <label>地市<span class="required">*</span></label>
-            <select id="city" required>
-              <option value="">请选择地市</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>填报人<span class="required">*</span></label>
-            <input type="text" id="reporter" placeholder="请输入姓名" required>
-          </div>
-
-          <div class="form-group">
-            <label>渠道名称<span class="required">*</span></label>
-            <input type="text" id="channelName" placeholder="请输入渠道名称" required>
-          </div>
-
-          <div class="form-group">
-            <label>提货通路<span class="required">*</span></label>
-            <select id="deliveryChannel" required>
-              <option value="">请选择提货通路</option>
-              <option value="线下直供">线下直供</option>
-              <option value="线上直供">线上直供</option>
-              <option value="分销渠道">分销渠道</option>
-              <option value="KA渠道">KA渠道</option>
-              <option value="运营商渠道">运营商渠道</option>
-              <option value="其他">其他</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>渠道八码<span class="required">*</span></label>
-            <input type="text" id="channelCode" placeholder="请输入8位渠道编码" required maxlength="8" pattern="\d{8}" title="请输入8位数字编码">
-          </div>
-
-          <div class="form-group">
-            <label>产品名称<span class="required">*</span></label>
-            <div class="product-select-wrapper">
-              <select id="product" required onchange="onProductChange()">
-                <option value="">请选择产品</option>
-              </select>
-            </div>
-            <span id="productStockHint" style="font-size:12px;color:#e74c3c;display:none;">⚠️ 该产品当前缺货</span>
-          </div>
-
-          <div class="form-group">
-            <label>产品数量<span class="required">*</span></label>
-            <input type="number" id="quantity" placeholder="请输入数量" required min="1" value="1">
-          </div>
-
+          <div class="form-group"><label>地市<span class="required">*</span></label><select id="city" required><option value="">请选择地市</option></select></div>
+          <div class="form-group"><label>填报人<span class="required">*</span></label><input type="text" id="reporter" placeholder="请输入姓名" required></div>
+          <div class="form-group"><label>渠道名称<span class="required">*</span></label><input type="text" id="channelName" placeholder="请输入渠道名称" required></div>
+          <div class="form-group"><label>提货通路<span class="required">*</span></label><select id="deliveryChannel" required><option value="">请选择提货通路</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>
+          <div class="form-group"><label>渠道八码<span class="required">*</span></label><input type="text" id="channelCode" placeholder="8位数字编码" required maxlength="8" pattern="\d{8}" title="请输入8位数字编码"></div>
+          <div class="form-group"><label>产品名称<span class="required">*</span></label><select id="product" required onchange="onProductChange()"><option value="">请选择产品</option></select><span id="productStockHint" style="font-size:12px;color:#e74c3c;display:none;">⚠️ 该产品当前缺货</span></div>
+          <div class="form-group"><label>产品数量<span class="required">*</span></label><input type="number" id="quantity" placeholder="请输入数量" required min="1" value="1"></div>
         </div>
-
         <div style="margin-top:24px;display:flex;gap:12px;">
-          <button type="submit" class="btn btn-primary">✅ 提交需求</button>
-          <button type="button" class="btn btn-outline" onclick="resetForm()">🔄 重置表单</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">✅ 提交需求</button>
+          <button type="button" class="btn btn-outline" onclick="resetForm()">🔄 重置</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- ========== TAB 2: 产品管理 ========== -->
+  <!-- ===== TAB: 产品管理 ===== -->
   <div class="panel" id="panel-products">
     <div class="card">
       <div class="card-title">产品列表维护</div>
       <div class="inline-form">
-        <div class="form-group">
-          <label>产品名称</label>
-          <input type="text" id="newProductName" placeholder="输入产品名称">
-        </div>
-        <div class="checkbox-group">
-          <input type="checkbox" id="newProductStock" checked>
-          <label for="newProductStock">有库存</label>
-        </div>
+        <div class="form-group"><label>产品名称</label><input type="text" id="newProductName" placeholder="输入产品名称"></div>
+        <div class="checkbox-group"><input type="checkbox" id="newProductStock" checked><label for="newProductStock">有库存</label></div>
         <button class="btn btn-primary btn-sm" onclick="addProduct()">➕ 添加产品</button>
-        <button class="btn btn-outline btn-sm" onclick="restoreDefaultProducts()">🔄 恢复默认</button>
+        <button class="btn btn-outline btn-sm" onclick="restoreDefaults()">🔄 恢复默认</button>
       </div>
-
       <div style="margin-top:16px;">
-        <table>
-          <thead>
-            <tr>
-              <th>序号</th>
-              <th>产品名称</th>
-              <th>库存状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="productTableBody">
-            <!-- filled by JS -->
-          </tbody>
-        </table>
-        <div class="empty-state" id="productEmpty" style="display:none;">
-          <div class="empty-icon">📦</div>
-          <p>暂无产品，请添加</p>
-        </div>
+        <table><thead><tr><th>序号</th><th>产品名称</th><th>库存状态</th><th>操作</th></tr></thead><tbody id="productTableBody"></tbody></table>
+        <div class="empty-state" id="productEmpty" style="display:none;"><div class="empty-icon">📦</div><p>暂无产品</p></div>
       </div>
     </div>
   </div>
 
-  <!-- ========== TAB 3: 提报记录 ========== -->
+  <!-- ===== TAB: 提报记录 ===== -->
   <div class="panel" id="panel-records">
-
-    <!-- Stats -->
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-icon blue">📋</div>
-        <div><div class="stat-value" id="statTotal">0</div><div class="stat-label">总提报数</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green">📦</div>
-        <div><div class="stat-value" id="statProducts">0</div><div class="stat-label">涉及产品数</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange">🏙️</div>
-        <div><div class="stat-value" id="statCities">0</div><div class="stat-label">覆盖地市</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red">⚠️</div>
-        <div><div class="stat-value" id="statOOS">0</div><div class="stat-label">缺货产品提报</div></div>
-      </div>
+      <div class="stat-card"><div class="stat-icon blue">📋</div><div><div class="stat-value" id="statTotal">0</div><div class="stat-label">总提报数</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">📦</div><div><div class="stat-value" id="statProducts">0</div><div class="stat-label">涉及产品数</div></div></div>
+      <div class="stat-card"><div class="stat-icon orange">🏙️</div><div><div class="stat-value" id="statCities">0</div><div class="stat-label">覆盖地市</div></div></div>
+      <div class="stat-card"><div class="stat-icon red">⚠️</div><div><div class="stat-value" id="statOOS">0</div><div class="stat-label">缺货产品提报</div></div></div>
     </div>
-
-    <!-- Records table -->
     <div class="card">
       <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;">
         <span>提报记录列表</span>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <select id="filterCity" onchange="renderRecords()" style="height:34px;padding:0 8px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;">
-            <option value="">全部地市</option>
-          </select>
+          <select id="filterCity" onchange="renderRecords()" style="height:34px;padding:0 8px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;"><option value="">全部地市</option></select>
           <input type="text" id="filterProduct" placeholder="搜索产品..." oninput="renderRecords()" style="height:34px;width:160px;padding:0 8px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;">
-          <button class="btn btn-success btn-sm" onclick="exportToExcel()">📥 导出Excel</button>
+          <button class="btn btn-success btn-sm" onclick="exportToExcel()" id="exportBtn">📥 导出Excel</button>
           <button class="btn btn-danger btn-sm" onclick="clearRecords()">🗑️ 清空记录</button>
         </div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>序号</th>
-              <th>提报时间</th>
-              <th>地市</th>
-              <th>填报人</th>
-              <th>渠道名称</th>
-              <th>提货通路</th>
-              <th>渠道八码</th>
-              <th>产品名称</th>
-              <th>库存状态</th>
-              <th>产品数量</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="recordsTableBody">
-            <!-- filled by JS -->
-          </tbody>
-        </table>
-        <div class="empty-state" id="recordsEmpty">
-          <div class="empty-icon">📭</div>
-          <p>暂无提报记录</p>
-        </div>
+        <table><thead><tr><th>序号</th><th>提报时间</th><th>地市</th><th>填报人</th><th>渠道名称</th><th>提货通路</th><th>渠道八码</th><th>产品名称</th><th>库存状态</th><th>产品数量</th><th>操作</th></tr></thead><tbody id="recordsTableBody"></tbody></table>
+        <div class="empty-state" id="recordsEmpty"><div class="empty-icon">📭</div><p>暂无提报记录</p></div>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- Toast container -->
 <div id="toastContainer"></div>
 
-<!-- Delete confirm modal -->
 <div class="modal-overlay" id="deleteModal">
-  <div class="modal">
-    <h3>确认删除</h3>
-    <p id="deleteModalMsg">确定要删除这条提报记录吗？此操作不可恢复。</p>
-    <div class="modal-buttons">
-      <button class="btn btn-outline" onclick="closeModal()">取消</button>
-      <button class="btn btn-danger" id="deleteConfirmBtn">确认删除</button>
-    </div>
+  <div class="modal"><h3>确认删除</h3><p>确定要删除这条提报记录吗？</p>
+    <div class="modal-buttons"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-danger" id="deleteConfirmBtn">确认删除</button></div>
   </div>
 </div>
 
-<div class="footer-info">
-  产品需求提报系统 v1.0 · 浙江省 · 数据存储于浏览器本地
-</div>
+<div class="footer-info">产品需求提报系统 v2.0 · 数据云端共享 · 浙江省</div>
 
 <script>
-// ==================== DATA STORE ====================
-const STORAGE_KEY_PRODUCTS = 'zhejiang_gtm_products';
-const STORAGE_KEY_RECORDS = 'zhejiang_gtm_records';
+// ==================== SUPABASE ====================
+var SUPABASE_URL = 'https://hrehnrlswtgkucoeoezb.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_n1A-HZY2F5F7Vf5jni23Vw_WvTcvHdf';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 浙江省11个地市
-const ZHEJIANG_CITIES = [
-  '杭州市', '宁波市', '温州市', '嘉兴市', '湖州市',
-  '绍兴市', '金华市', '衢州市', '舟山市', '台州市', '丽水市'
+var CITIES = ['杭州市','宁波市','温州市','嘉兴市','湖州市','绍兴市','金华市','衢州市','舟山市','台州市','丽水市'];
+var DEFAULT_PRODUCTS = [
+  {name:'手机 A-100',in_stock:true},{name:'手机 A-200',in_stock:true},{name:'手机 A-300 Pro',in_stock:true},
+  {name:'手机 B-100',in_stock:true},{name:'手机 B-200',in_stock:false},{name:'手机 C-100',in_stock:true},
+  {name:'手机 C-200 Pro',in_stock:true},{name:'平板 D-100',in_stock:true},{name:'平板 D-200',in_stock:false},
+  {name:'穿戴 E-100',in_stock:true},{name:'穿戴 E-200 Pro',in_stock:true},{name:'配件 F-100',in_stock:true}
 ];
 
-// 提货通路选项
-const DELIVERY_CHANNELS = [
-  '线下直供', '线上直供', '分销渠道', 'KA渠道', '运营商渠道', '其他'
-];
-
-// 默认产品列表
-const DEFAULT_PRODUCTS = [
-  { name: '手机 A-100', inStock: true },
-  { name: '手机 A-200', inStock: true },
-  { name: '手机 A-300 Pro', inStock: true },
-  { name: '手机 B-100', inStock: true },
-  { name: '手机 B-200', inStock: false },
-  { name: '手机 C-100', inStock: true },
-  { name: '手机 C-200 Pro', inStock: true },
-  { name: '平板 D-100', inStock: true },
-  { name: '平板 D-200', inStock: false },
-  { name: '穿戴 E-100', inStock: true },
-  { name: '穿戴 E-200 Pro', inStock: true },
-  { name: '配件 F-100', inStock: true },
-];
-
-// ==================== INIT ====================
-function getProducts() {
-  const raw = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-  if (!raw) {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
-    return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
-  }
-  return JSON.parse(raw);
-}
-
-function saveProducts(products) {
-  localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
-}
-
-function getRecords() {
-  const raw = localStorage.getItem(STORAGE_KEY_RECORDS);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function saveRecords(records) {
-  localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records));
-}
+var productList = [];
+var demandList = [];
+var pendingDeleteId = null;
 
 // ==================== TOAST ====================
 function showToast(msg, type) {
-  type = type || 'info';
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = 'toast ' + type;
-  toast.textContent = msg;
-  container.appendChild(toast);
-  setTimeout(function() {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity .3s';
-    setTimeout(function() { toast.remove(); }, 300);
-  }, 2000);
+  var c = document.getElementById('toastContainer');
+  var t = document.createElement('div');
+  t.className = 'toast ' + (type||'info'); t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ t.remove(); },300); },2000);
 }
 
 // ==================== MODAL ====================
-var pendingDeleteIndex = -1;
-
-function openDeleteModal(index) {
-  pendingDeleteIndex = index;
-  document.getElementById('deleteModal').classList.add('show');
-}
-
-function closeModal() {
-  pendingDeleteIndex = -1;
-  document.getElementById('deleteModal').classList.remove('show');
-}
-
-document.getElementById('deleteConfirmBtn').addEventListener('click', function() {
-  if (pendingDeleteIndex >= 0) {
-    var records = getRecords();
-    records.splice(pendingDeleteIndex, 1);
-    saveRecords(records);
-    renderRecords();
+function openDeleteModal(id) { pendingDeleteId = id; document.getElementById('deleteModal').classList.add('show'); }
+function closeModal() { pendingDeleteId = null; document.getElementById('deleteModal').classList.remove('show'); }
+document.getElementById('deleteConfirmBtn').addEventListener('click', async function() {
+  if (!pendingDeleteId) return;
+  try {
+    await sb.from('demands').delete().eq('id', pendingDeleteId);
     showToast('记录已删除', 'success');
-  }
+    loadAndRender();
+  } catch(e) { showToast('删除失败', 'error'); }
   closeModal();
 });
 
 // ==================== TAB SWITCHING ====================
 function switchTab(tab) {
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('panel-' + tab).classList.add('active');
-
-  if (tab === 'submit') {
-    populateCitySelect();
-    populateProductSelect();
-  } else if (tab === 'products') {
-    renderProductTable();
-  } else if (tab === 'records') {
-    populateFilterCity();
-    renderRecords();
-  }
+  if (tab === 'submit') { populateCities(); loadProductsIntoSelect(); }
+  else if (tab === 'products') { loadAndRenderProducts(); }
+  else if (tab === 'records') { loadAndRender(); }
 }
 
-// ==================== POPULATE SELECTS ====================
-function populateCitySelect() {
+// ==================== POPULATE CITIES ====================
+function populateCities() {
   var sel = document.getElementById('city');
-  if (sel.options.length > 1) return; // already populated
-  ZHEJIANG_CITIES.forEach(function(c) {
-    var opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    sel.appendChild(opt);
-  });
+  if (sel.options.length > 1) return;
+  CITIES.forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
 }
 
-function populateProductSelect() {
+// ==================== LOAD PRODUCTS ====================
+async function loadProductsIntoSelect() {
   var sel = document.getElementById('product');
-  // keep first option, remove rest
-  while (sel.options.length > 1) sel.remove(1);
-
-  var products = getProducts();
-  products.forEach(function(p) {
-    var opt = document.createElement('option');
-    opt.value = p.name;
-    opt.textContent = p.name + (p.inStock ? '' : ' [缺货]');
-    if (!p.inStock) {
-      opt.style.color = '#e74c3c';
-    }
-    sel.appendChild(opt);
-  });
+  try {
+    var res = await sb.from('products').select('*').order('name');
+    if (res.error) throw res.error;
+    productList = res.data || [];
+    while (sel.options.length > 1) sel.remove(1);
+    productList.forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name + (p.in_stock ? '' : ' [缺货]');
+      if (!p.in_stock) opt.style.color = '#e74c3c';
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error(e); }
 }
 
 function onProductChange() {
-  var sel = document.getElementById('product');
-  var hint = document.getElementById('productStockHint');
-  var products = getProducts();
-  var selectedName = sel.value;
-  var product = products.find(function(p) { return p.name === selectedName; });
-  if (product && !product.inStock) {
-    hint.style.display = 'block';
-  } else {
-    hint.style.display = 'none';
-  }
+  var name = document.getElementById('product').value;
+  var p = productList.find(function(x){ return x.name === name; });
+  document.getElementById('productStockHint').style.display = (p && !p.in_stock) ? 'block' : 'none';
 }
 
-// ==================== FORM SUBMIT ====================
-function submitDemand(e) {
+// ==================== SUBMIT DEMAND ====================
+async function submitDemand(e) {
   e.preventDefault();
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
 
   var city = document.getElementById('city').value;
   var reporter = document.getElementById('reporter').value.trim();
@@ -702,301 +296,206 @@ function submitDemand(e) {
   var product = document.getElementById('product').value;
   var quantity = parseInt(document.getElementById('quantity').value);
 
-  // Validate channel code
   if (!/^\d{8}$/.test(channelCode)) {
     showToast('渠道八码必须为8位数字', 'error');
-    return;
+    btn.disabled = false; btn.textContent = '✅ 提交需求'; return;
   }
 
-  var products = getProducts();
-  var productObj = products.find(function(p) { return p.name === product; });
-  var inStock = productObj ? productObj.inStock : true;
+  var pObj = productList.find(function(x){ return x.name === product; });
+  var inStock = pObj ? pObj.in_stock : true;
 
-  var record = {
-    id: Date.now(),
-    time: new Date().toLocaleString('zh-CN'),
-    city: city,
-    reporter: reporter,
-    channelName: channelName,
-    deliveryChannel: deliveryChannel,
-    channelCode: channelCode,
-    product: product,
-    inStock: inStock,
-    quantity: quantity
-  };
-
-  var records = getRecords();
-  records.unshift(record);
-  saveRecords(records);
-
-  showToast('✅ 需求提报成功！', 'success');
-  resetForm();
+  try {
+    var res = await sb.from('demands').insert([{
+      city: city, reporter: reporter, channel_name: channelName,
+      delivery_channel: deliveryChannel, channel_code: channelCode,
+      product: product, in_stock: inStock, quantity: quantity
+    }]);
+    if (res.error) throw res.error;
+    showToast('✅ 需求提报成功！', 'success');
+    resetForm();
+  } catch(err) { showToast('提交失败：' + (err.message||'网络错误'), 'error'); }
+  btn.disabled = false; btn.textContent = '✅ 提交需求';
 }
 
-function resetForm() {
-  document.getElementById('demandForm').reset();
-  document.getElementById('productStockHint').style.display = 'none';
-}
+function resetForm() { document.getElementById('demandForm').reset(); document.getElementById('productStockHint').style.display = 'none'; }
 
 // ==================== PRODUCT MANAGEMENT ====================
+async function loadAndRenderProducts() {
+  try {
+    var res = await sb.from('products').select('*').order('name');
+    if (res.error) throw res.error;
+    productList = res.data || [];
+    renderProductTable();
+  } catch(e) { console.error(e); }
+}
+
 function renderProductTable() {
-  var products = getProducts();
   var tbody = document.getElementById('productTableBody');
   var empty = document.getElementById('productEmpty');
   tbody.innerHTML = '';
-
-  if (products.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
+  if (productList.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-
-  products.forEach(function(p, i) {
+  productList.forEach(function(p, i) {
     var tr = document.createElement('tr');
-    if (!p.inStock) tr.className = 'oos-row';
-
-    var stockHTML = p.inStock
-      ? '<span style="color:#27ae60;font-weight:600;">✅ 有库存</span>'
-      : '<span class="oos-tag">缺货</span>';
-
+    if (!p.in_stock) tr.className = 'oos-row';
     tr.innerHTML =
-      '<td>' + (i + 1) + '</td>' +
+      '<td>' + (i+1) + '</td>' +
       '<td>' + escapeHTML(p.name) + '</td>' +
-      '<td>' + stockHTML + '</td>' +
+      '<td>' + (p.in_stock ? '<span style="color:#27ae60;font-weight:600;">✅ 有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
       '<td>' +
-        '<button class="btn btn-outline btn-sm" onclick="toggleStock(' + i + ')" style="margin-right:6px;">' +
-          (p.inStock ? '🔴 标为缺货' : '🟢 标为有货') +
-        '</button>' +
-        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + i + ')">删除</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleStock(\'' + encodeURIComponent(p.name) + '\')" style="margin-right:6px;">' + (p.in_stock ? '🔴 标为缺货' : '🟢 标为有货') + '</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + encodeURIComponent(p.name) + '\')">删除</button>' +
       '</td>';
-
     tbody.appendChild(tr);
   });
 }
 
-function addProduct() {
-  var nameInput = document.getElementById('newProductName');
-  var stockCheck = document.getElementById('newProductStock');
-  var name = nameInput.value.trim();
-
-  if (!name) {
-    showToast('请输入产品名称', 'error');
-    return;
-  }
-
-  var products = getProducts();
-  // check duplicate
-  if (products.some(function(p) { return p.name === name; })) {
-    showToast('产品 "' + name + '" 已存在', 'error');
-    return;
-  }
-
-  products.push({ name: name, inStock: stockCheck.checked });
-  saveProducts(products);
-  nameInput.value = '';
-  stockCheck.checked = true;
-  renderProductTable();
-  showToast('产品 "' + name + '" 添加成功', 'success');
+async function addProduct() {
+  var name = document.getElementById('newProductName').value.trim();
+  var inStock = document.getElementById('newProductStock').checked;
+  if (!name) { showToast('请输入产品名称', 'error'); return; }
+  try {
+    // upsert
+    var res = await sb.from('products').upsert({name: name, in_stock: inStock}, {onConflict: 'name'});
+    if (res.error) throw res.error;
+    document.getElementById('newProductName').value = '';
+    document.getElementById('newProductStock').checked = true;
+    await loadAndRenderProducts();
+    showToast('产品 "' + name + '" 添加成功', 'success');
+  } catch(e) { showToast('添加失败', 'error'); }
 }
 
-function toggleStock(index) {
-  var products = getProducts();
-  products[index].inStock = !products[index].inStock;
-  saveProducts(products);
-  renderProductTable();
-  showToast('库存状态已更新', 'info');
+async function toggleStock(name) {
+  name = decodeURIComponent(name);
+  var p = productList.find(function(x){ return x.name === name; });
+  if (!p) return;
+  try {
+    var res = await sb.from('products').update({in_stock: !p.in_stock}).eq('name', name);
+    if (res.error) throw res.error;
+    await loadAndRenderProducts();
+    showToast('库存状态已更新', 'info');
+  } catch(e) { showToast('更新失败', 'error'); }
 }
 
-function deleteProduct(index) {
-  var products = getProducts();
-  var name = products[index].name;
-  if (confirm('确定要删除产品 "' + name + '" 吗？')) {
-    products.splice(index, 1);
-    saveProducts(products);
-    renderProductTable();
+async function deleteProduct(name) {
+  name = decodeURIComponent(name);
+  if (!confirm('确定要删除产品 "' + name + '" 吗？')) return;
+  try {
+    var res = await sb.from('products').delete().eq('name', name);
+    if (res.error) throw res.error;
+    await loadAndRenderProducts();
     showToast('产品已删除', 'success');
-  }
+  } catch(e) { showToast('删除失败', 'error'); }
 }
 
-function restoreDefaultProducts() {
-  if (confirm('确定要恢复默认产品列表吗？当前自定义的产品将被覆盖。')) {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
-    renderProductTable();
+async function restoreDefaults() {
+  if (!confirm('确定要恢复默认产品列表吗？自定义产品将被覆盖。')) return;
+  try {
+    // clear all then insert defaults
+    await sb.from('products').delete().neq('name', '__NONEXISTENT__');
+    var res = await sb.from('products').insert(DEFAULT_PRODUCTS);
+    if (res.error) throw res.error;
+    await loadAndRenderProducts();
     showToast('已恢复默认产品列表', 'success');
-  }
+  } catch(e) { showToast('恢复失败', 'error'); }
 }
 
-// ==================== RECORDS & EXPORT ====================
+// ==================== DEMAND RECORDS ====================
+async function loadAndRender() {
+  try {
+    var res = await sb.from('demands').select('*').order('created_at', {ascending: false});
+    if (res.error) throw res.error;
+    demandList = res.data || [];
+    populateFilterCity();
+    renderRecords();
+    updateStats();
+  } catch(e) { console.error(e); }
+}
+
+function updateStats() {
+  var all = demandList;
+  document.getElementById('statTotal').textContent = all.length;
+  var pSet = {}, cSet = {}, oos = 0;
+  all.forEach(function(r){ pSet[r.product]=true; cSet[r.city]=true; if(!r.in_stock) oos++; });
+  document.getElementById('statProducts').textContent = Object.keys(pSet).length;
+  document.getElementById('statCities').textContent = Object.keys(cSet).length;
+  document.getElementById('statOOS').textContent = oos;
+}
+
 function populateFilterCity() {
   var sel = document.getElementById('filterCity');
-  if (sel.options.length > 1) return;
-  ZHEJIANG_CITIES.forEach(function(c) {
-    var opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    sel.appendChild(opt);
-  });
+  while (sel.options.length > 1) sel.remove(1);
+  var seen = {};
+  demandList.forEach(function(r){ if(!seen[r.city]){ seen[r.city]=true; var o=document.createElement('option'); o.value=r.city; o.textContent=r.city; sel.appendChild(o); } });
 }
 
 function renderRecords() {
-  var records = getRecords();
   var filterCity = document.getElementById('filterCity').value;
   var filterProduct = document.getElementById('filterProduct').value.trim().toLowerCase();
-
-  if (filterCity) {
-    records = records.filter(function(r) { return r.city === filterCity; });
-  }
-  if (filterProduct) {
-    records = records.filter(function(r) { return r.product.toLowerCase().indexOf(filterProduct) >= 0; });
-  }
+  var list = demandList;
+  if (filterCity) list = list.filter(function(r){ return r.city === filterCity; });
+  if (filterProduct) list = list.filter(function(r){ return r.product.toLowerCase().indexOf(filterProduct) >= 0; });
 
   var tbody = document.getElementById('recordsTableBody');
   var empty = document.getElementById('recordsEmpty');
   tbody.innerHTML = '';
-
-  // update stats (use all records, not filtered)
-  var allRecords = getRecords();
-  document.getElementById('statTotal').textContent = allRecords.length;
-  var productSet = {};
-  var citySet = {};
-  var oosCount = 0;
-  allRecords.forEach(function(r) {
-    productSet[r.product] = true;
-    citySet[r.city] = true;
-    if (!r.inStock) oosCount++;
-  });
-  document.getElementById('statProducts').textContent = Object.keys(productSet).length;
-  document.getElementById('statCities').textContent = Object.keys(citySet).length;
-  document.getElementById('statOOS').textContent = oosCount;
-
-  if (records.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
+  if (list.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  records.forEach(function(r, i) {
+  list.forEach(function(r, i) {
     var tr = document.createElement('tr');
-    if (!r.inStock) tr.className = 'oos-row';
-
-    var stockHTML = r.inStock
-      ? '<span style="color:#27ae60;">有库存</span>'
-      : '<span class="oos-tag">缺货</span>';
-
+    if (!r.in_stock) tr.className = 'oos-row';
+    var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : (r.created_at || '');
     tr.innerHTML =
-      '<td>' + (i + 1) + '</td>' +
-      '<td>' + r.time + '</td>' +
+      '<td>' + (i+1) + '</td>' +
+      '<td>' + time + '</td>' +
       '<td>' + r.city + '</td>' +
       '<td>' + escapeHTML(r.reporter) + '</td>' +
-      '<td>' + escapeHTML(r.channelName) + '</td>' +
-      '<td>' + r.deliveryChannel + '</td>' +
-      '<td>' + r.channelCode + '</td>' +
+      '<td>' + escapeHTML(r.channel_name) + '</td>' +
+      '<td>' + r.delivery_channel + '</td>' +
+      '<td>' + r.channel_code + '</td>' +
       '<td>' + escapeHTML(r.product) + '</td>' +
-      '<td>' + stockHTML + '</td>' +
+      '<td>' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
       '<td>' + r.quantity + '</td>' +
-      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(' + getRecordOriginalIndex(r.id) + ')">删除</button></td>';
-
+      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(' + r.id + ')">删除</button></td>';
     tbody.appendChild(tr);
   });
 }
 
-function getRecordOriginalIndex(id) {
-  var records = getRecords();
-  for (var i = 0; i < records.length; i++) {
-    if (records[i].id === id) return i;
-  }
-  return -1;
-}
-
-// ==================== EXCEL EXPORT ====================
+// ==================== EXPORT EXCEL ====================
 function exportToExcel() {
-  var records = getRecords();
-  if (records.length === 0) {
-    showToast('没有可导出的记录', 'error');
-    return;
-  }
-
-  // Prepare data for Excel
-  var data = [['序号', '提报时间', '地市', '填报人', '渠道名称', '提货通路', '渠道八码', '产品名称', '库存状态', '产品数量']];
-  records.forEach(function(r, i) {
-    data.push([
-      i + 1,
-      r.time,
-      r.city,
-      r.reporter,
-      r.channelName,
-      r.deliveryChannel,
-      r.channelCode,
-      r.product,
-      r.inStock ? '有库存' : '缺货',
-      r.quantity
-    ]);
+  var list = demandList;
+  if (list.length === 0) { showToast('没有可导出的记录', 'error'); return; }
+  var data = [['序号','提报时间','地市','填报人','渠道名称','提货通路','渠道八码','产品名称','库存状态','产品数量']];
+  list.forEach(function(r, i) {
+    var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : (r.created_at || '');
+    data.push([i+1, time, r.city, r.reporter, r.channel_name, r.delivery_channel, r.channel_code, r.product, r.in_stock ? '有库存' : '缺货', r.quantity]);
   });
-
-  // Create workbook
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(data);
-
-  // Set column widths
-  ws['!cols'] = [
-    { wch: 6 },  // 序号
-    { wch: 22 }, // 提报时间
-    { wch: 10 }, // 地市
-    { wch: 12 }, // 填报人
-    { wch: 20 }, // 渠道名称
-    { wch: 14 }, // 提货通路
-    { wch: 12 }, // 渠道八码
-    { wch: 18 }, // 产品名称
-    { wch: 10 }, // 库存状态
-    { wch: 10 }, // 产品数量
-  ];
-
+  ws['!cols'] = [{wch:6},{wch:22},{wch:10},{wch:12},{wch:20},{wch:14},{wch:12},{wch:18},{wch:10},{wch:10}];
   XLSX.utils.book_append_sheet(wb, ws, '产品需求提报');
-
-  // Generate filename with date
   var now = new Date();
-  var filename = '浙江省产品需求提报_' +
-    now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0') + '_' +
-    String(now.getHours()).padStart(2, '0') +
-    String(now.getMinutes()).padStart(2, '0') +
-    '.xlsx';
-
-  // Download — will go to browser's default download folder (typically Desktop or Downloads)
-  XLSX.writeFile(wb, filename);
-
-  showToast('📥 Excel已导出: ' + filename, 'success');
+  var fn = '浙江省产品需求提报_' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + '.xlsx';
+  XLSX.writeFile(wb, fn);
+  showToast('📥 Excel已导出: ' + fn, 'success');
 }
 
-function clearRecords() {
-  if (confirm('确定要清空所有提报记录吗？此操作不可恢复。\n\n建议先导出Excel备份。')) {
-    localStorage.removeItem(STORAGE_KEY_RECORDS);
-    renderRecords();
+async function clearRecords() {
+  if (!confirm('确定清空所有提报记录吗？此操作不可恢复。\n建议先导出Excel备份。')) return;
+  try {
+    await sb.from('demands').delete().neq('id', -1);
+    await loadAndRender();
     showToast('所有记录已清空', 'info');
-  }
+  } catch(e) { showToast('清空失败', 'error'); }
 }
 
 // ==================== HELPERS ====================
-function escapeHTML(str) {
-  var div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// Enter key to add product
-document.getElementById('newProductName').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    addProduct();
-  }
-});
+function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+document.getElementById('newProductName').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addProduct(); } });
 
 // ==================== STARTUP ====================
-(function() {
-  populateCitySelect();
-  populateProductSelect();
-})();
+(function() { populateCities(); loadProductsIntoSelect(); })();
 </script>
 </body>
 </html>
