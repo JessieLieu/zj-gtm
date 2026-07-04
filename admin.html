@@ -800,10 +800,13 @@ function showColFilter(field, th, evt) {
 function filterColOptions(inp) {
   var v = inp.value.toLowerCase();
   var popup = inp.parentElement;
-  var labels = popup.querySelectorAll('label');
+  // 全选行始终显示
+  var allRow = popup.querySelector('.cf-all-row');
+  if (allRow) allRow.style.display = '';
+  var labels = popup.querySelectorAll('label:not(.cf-all-row label)');
   labels.forEach(function(l) {
     var txt = l.textContent.toLowerCase();
-    l.style.display = (txt.indexOf('全部') >= 0 || txt.indexOf(v) >= 0) ? '' : 'none';
+    l.style.display = (txt.indexOf(v) >= 0) ? '' : 'none';
   });
 }
 
