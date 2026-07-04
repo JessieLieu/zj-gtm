@@ -477,20 +477,20 @@ function renderProductTable() {
     var cl = {};
     try { if (p.channel_limits) cl = typeof p.channel_limits === 'string' ? JSON.parse(p.channel_limits) : p.channel_limits; } catch(e) {}
     var escName = encodeURIComponent(p.name);
-    var chInputs = ['移动','太力','和动力','天翼','联通'].map(function(ch) {
-      return '<span style="font-size:9px;color:#888;">' + ch + '</span><input type="number" value="' + (cl[ch] || '') + '" onchange="updateChannelLimit(\'' + escName + '\',\'' + ch + '\',this.value)" style="width:24px;height:18px;font-size:9px;padding:0 1px;border:1px solid #d9d9d9;border-radius:2px;" placeholder="-" min="0">';
-    }).join('');
+    var chInputs = ['移动','太力','天翼'].map(function(ch) {
+      return '<span style="font-size:10px;color:#888;">' + ch + '</span><input type="number" value="' + (cl[ch] || '') + '" onchange="updateChannelLimit(\'' + escName + '\',\'' + ch + '\',this.value)" style="width:30px;height:20px;font-size:10px;padding:0 2px;border:1px solid #d9d9d9;border-radius:2px;" placeholder="-" min="0">';
+    }).join(' ');
     tr.innerHTML =
       '<td><input type="checkbox" class="product-cb" value="' + escapeHTML(p.name) + '"></td>' +
-      '<td style="font-size:11px;">' + idx + '</td>' +
-      '<td style="font-size:11px;">' + (p.category || '销售机') + '</td>' +
-      '<td style="font-size:11px;">' + escapeHTML(p.name) + '</td>' +
-      '<td style="font-size:11px;">' + (p.in_stock ? '<span style="color:#27ae60;">✅</span>' : '<span style="color:#e74c3c;">缺货</span>') + '</td>' +
-      '<td><input type="number" value="' + (p.customer_limit || '') + '" onchange="updateCustomerLimit(\'' + escName + '\',this.value)" style="width:40px;height:22px;font-size:11px;padding:0 2px;border:1px solid #d9d9d9;border-radius:3px;" placeholder="-" min="0"></td>' +
-      '<td><input type="number" value="' + (p.daily_limit || '') + '" onchange="updateDailyLimit(\'' + escName + '\',this.value)" style="width:40px;height:22px;font-size:11px;padding:0 2px;border:1px solid #d9d9d9;border-radius:3px;" placeholder="-" min="0"> <span style="font-size:9px;">' + chInputs + '</span></td>' +
+      '<td style="font-size:12px;">' + idx + '</td>' +
+      '<td style="font-size:12px;">' + (p.category || '销售机') + '</td>' +
+      '<td style="font-size:12px;">' + escapeHTML(p.name) + '</td>' +
+      '<td style="font-size:12px;">' + (p.in_stock ? '<span style="color:#27ae60;">✅</span>' : '<span style="color:#e74c3c;">缺货</span>') + '</td>' +
+      '<td><input type="number" value="' + (p.customer_limit || '') + '" onchange="updateCustomerLimit(\'' + escName + '\',this.value)" style="width:44px;height:24px;font-size:12px;padding:0 3px;border:1px solid #d9d9d9;border-radius:3px;" placeholder="-" min="0"></td>' +
+      '<td><input type="number" value="' + (p.daily_limit || '') + '" onchange="updateDailyLimit(\'' + escName + '\',this.value)" style="width:44px;height:24px;font-size:12px;padding:0 3px;border:1px solid #d9d9d9;border-radius:3px;" placeholder="-" min="0"> <span style="font-size:10px;">' + chInputs + '</span></td>' +
       '<td style="white-space:nowrap;">' +
-        '<button class="btn btn-outline btn-sm" onclick="toggleStock(\'' + escName + '\')" style="font-size:10px;padding:2px 6px;margin-right:2px;">' + (p.in_stock ? '缺' : '有') + '</button>' +
-        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + escName + '\')" style="font-size:10px;padding:2px 6px;">删</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleStock(\'' + escName + '\')" style="font-size:11px;padding:2px 8px;margin-right:3px;">' + (p.in_stock ? '缺' : '有') + '</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + escName + '\')" style="font-size:11px;padding:2px 8px;">删</button>' +
       '</td>';
     tbody.appendChild(tr);
   });
