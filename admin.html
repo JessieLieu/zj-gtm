@@ -826,8 +826,13 @@ function clearColFilter(field) {
 
 function selAllColOpts(cb, field) {
   var popup = cb.closest('.col-filter-popup');
-  var cbs = popup.querySelectorAll('.cf-cb');
-  cbs.forEach(function(c) { c.checked = cb.checked; c.onchange(); });
+  // 仅影响当前可见的选项（被搜索过滤隐藏的不处理）
+  popup.querySelectorAll('.cf-cb').forEach(function(c) {
+    var label = c.closest('label');
+    if (label && label.style.display === 'none') return;
+    c.checked = cb.checked;
+    c.onchange();
+  });
 }
 
 function renderRecords() {
