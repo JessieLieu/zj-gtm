@@ -32,9 +32,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Ya
 .nav-btn { color: #fff !important; border-color: rgba(255,255,255,.7) !important; font-weight: 700 !important; font-size: 13px !important; background: rgba(255,255,255,.12); }
 .nav-btn:hover { background: rgba(255,255,255,.25) !important; }
 .table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th { background: #fafafa; padding: 12px 14px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e8e8e8; white-space: nowrap; position: relative; }
-tbody td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: auto; }
+thead th { background: #fafafa; padding: 8px 6px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e8e8e8; white-space: nowrap; position: relative; font-size: 11px; }
+tbody td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; font-size: 12px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+thead th:first-child, tbody td:first-child { width: 28px; }
+thead th:nth-child(2), tbody td:nth-child(2) { width: 32px; }
 tbody tr:hover { background: #f8f9ff; }
 .oos-row { background: #fff8f8; } .oos-row td { color: #999; }
 .oos-tag { display: inline-block; background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
@@ -839,14 +841,15 @@ function renderRecords() {
     var tr = document.createElement('tr');
     if (!r.in_stock) tr.className = 'oos-row';
     var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
+    var cn = escapeHTML(r.channel_name), pn = escapeHTML(r.product), rsn = escapeHTML(r.reason||'—');
     tr.innerHTML =
       '<td><input type="checkbox" class="record-cb" value="' + r.id + '"></td>' +
-      '<td>' + (i+1) + '</td><td>' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
-      '<td>' + escapeHTML(r.channel_name) + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
-      '<td>' + escapeHTML(r.product) + '</td>' +
-      '<td>' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
+      '<td>' + (i+1) + '</td><td style="font-size:11px;">' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
+      '<td title="' + cn + '">' + cn + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
+      '<td title="' + pn + '">' + pn + '</td>' +
+      '<td style="font-size:11px;">' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
       '<td>' + r.quantity + '</td>' +
-      '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHTML(r.reason||'') + '">' + escapeHTML(r.reason||'—') + '</td>' +
+      '<td title="' + rsn + '">' + rsn + '</td>' +
       '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(' + r.id + ')">删除</button></td>';
     tbody.appendChild(tr);
   });
