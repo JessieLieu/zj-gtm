@@ -235,6 +235,11 @@ tbody tr:hover { background: #f8f9ff; }
 <th>提报原因<span class="col-filter-btn" onclick="showColFilter('reason',this,event)" title="筛选"> ▾</span></th>
 <th>操作</th>
 </tr></thead><tbody id="recordsTableBody"></tbody></table>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;" id="paginationBar">
+          <button class="btn btn-outline btn-sm" onclick="goPage(-1)">◀ 上一页</button>
+          <span style="font-size:13px;color:#555;" id="pageInfo"></span>
+          <button class="btn btn-outline btn-sm" onclick="goPage(1)">下一页 ▶</button>
+        </div>
         <div class="empty-state" id="recordsEmpty"><div class="empty-icon">📭</div><p>暂无提报记录</p></div>
       </div>
     </div>
@@ -740,8 +745,10 @@ function updateStats() {
 }
 
 var colFilters = {}; // { field: value }
+var page = 1, pageSize = 10;
 
 function clearAllFilters() {
+  page = 1;
   colFilters = {};
   renderRecords();
   showToast('已清除所有筛选', 'info');
@@ -811,6 +818,7 @@ function filterColOptions(inp) {
 }
 
 function toggleColVal(field, value, cb) {
+  page = 1;
   if (!colFilters[field]) colFilters[field] = [];
   if (cb.checked) { if (colFilters[field].indexOf(value) < 0) colFilters[field].push(value); }
   else { colFilters[field] = colFilters[field].filter(function(v) { return v !== value; }); }
@@ -819,12 +827,14 @@ function toggleColVal(field, value, cb) {
 }
 
 function clearColFilter(field) {
+  page = 1;
   delete colFilters[field];
   document.querySelector('.col-filter-popup').remove();
   renderRecords();
 }
 
 function selAllColOpts(cb, field) {
+  page = 1;
   var popup = cb.closest('.col-filter-popup');
   var newVals = [];
   popup.querySelectorAll('.cf-cb').forEach(function(c) {
@@ -835,6 +845,13 @@ function selAllColOpts(cb, field) {
   });
   if (newVals.length === 0) delete colFilters[field];
   else colFilters[field] = newVals;
+  renderRecords();
+}
+
+function goPage(dir) {
+  var total = demandList.length;
+  var maxPage = Math.max(1, Math.ceil(total / pageSize));
+  page = Math.min(maxPage, Math.max(1, page + dir));
   renderRecords();
 }
 
@@ -859,19 +876,30 @@ function renderRecords() {
       list = list.filter(function(r){ return vals.indexOf(r[field]) >= 0; });
     }
   });
+  // 分页
+  var total = list.length;
+  var maxPage = Math.max(1, Math.ceil(total / pageSize));
+  if (page > maxPage) page = maxPage;
+  var start = (page - 1) * pageSize;
+  var paged = list.slice(start, start + pageSize);
+
   var tbody = document.getElementById('recordsTableBody');
   var empty = document.getElementById('recordsEmpty');
+  var pageInfo = document.getElementById('pageInfo');
   tbody.innerHTML = '';
-  if (list.length === 0) { empty.style.display = 'block'; return; }
+  if (total === 0) { empty.style.display = 'block'; document.getElementById('paginationBar').style.display = 'none'; return; }
   empty.style.display = 'none';
-  list.forEach(function(r, i) {
+  document.getElementById('paginationBar').style.display = 'flex';
+  pageInfo.textContent = '第 ' + page + '/' + maxPage + ' 页，共 ' + total + ' 条';
+  paged.forEach(function(r, i) {
+    var idx = start + i + 1;
     var tr = document.createElement('tr');
     if (!r.in_stock) tr.className = 'oos-row';
     var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
     var cn = escapeHTML(r.channel_name), pn = escapeHTML(r.product), rsn = escapeHTML(r.reason||'—');
     tr.innerHTML =
       '<td><input type="checkbox" class="record-cb" value="' + r.id + '"></td>' +
-      '<td>' + (i+1) + '</td><td style="font-size:11px;">' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
+      '<td>' + idx + '</td><td style="font-size:11px;">' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
       '<td title="' + cn + '">' + cn + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
       '<td title="' + pn + '">' + pn + '</td>' +
       '<td style="font-size:11px;">' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
