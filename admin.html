@@ -105,6 +105,9 @@ tbody tr:hover { background: #f8f9ff; }
         <div class="checkbox-group"><input type="checkbox" id="newProductStock" checked><label for="newProductStock">有库存</label></div>
         <button class="btn btn-primary btn-sm" onclick="addProduct()">➕ 添加产品</button>
         <button class="btn btn-outline btn-sm" onclick="restoreDefaults()">🔄 恢复默认</button>
+        <button class="btn btn-success btn-sm" onclick="document.getElementById('importFile').click()">📥 批量导入</button>
+        <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="handleFileImport(event)">
+        <span style="font-size:11px;color:#999;margin-left:4px;">Excel: A列=产品名称, B列=库存(有库存/缺货)</span>
       </div>
       <div style="margin-top:16px;">
         <table><thead><tr><th>序号</th><th>产品名称</th><th>库存状态</th><th>操作</th></tr></thead><tbody id="productTableBody"></tbody></table>
@@ -157,7 +160,7 @@ var DEFAULT_PRODUCTS = [
 ];
 var productList = [];
 var demandList = [];
-var pendingDeleteFilter = null;
+var pendingDeleteId = null;
 
 function showToast(msg, type) {
   var c = document.getElementById('toastContainer');
@@ -179,11 +182,11 @@ function api(method, path, body) {
 }
 
 // ==================== MODAL ====================
-function openDeleteModal(filter) { pendingDeleteFilter = filter; document.getElementById('deleteModal').classList.add('show'); }
-function closeModal() { pendingDeleteFilter = null; document.getElementById('deleteModal').classList.remove('show'); }
+function openDeleteModal(id) { pendingDeleteId = id; document.getElementById('deleteModal').classList.add('show'); }
+function closeModal() { pendingDeleteId = null; document.getElementById('deleteModal').classList.remove('show'); }
 document.getElementById('deleteConfirmBtn').addEventListener('click', function() {
-  if (!pendingDeleteFilter) return;
-  api('DELETE', '/demands?' + pendingDeleteFilter)
+  if (!pendingDeleteId) return;
+  api('DELETE', '/demands?id=eq.' + pendingDeleteId)
     .then(function() { showToast('已删除', 'success'); loadAndRender(); closeModal(); })
     .catch(function(e) { showToast('删除失败', 'error'); });
 });
@@ -290,9 +293,53 @@ function restoreDefaults() {
   });
 }
 
+// ==================== BATCH IMPORT ====================
+function handleFileImport(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  showToast('正在解析...', 'info');
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      var wb = XLSX.read(evt.target.result, {type: 'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header: 1});
+      if (!rows || rows.length === 0) { showToast('Excel 为空', 'error'); return; }
+      var products = [];
+      var skipped = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var name = row[0] ? String(row[0]).trim() : '';
+        if (!name) { skipped++; continue; }
+        var stockVal = row[1];
+        var inStock = true;
+        if (stockVal !== undefined && stockVal !== null && String(stockVal).trim() !== '') {
+          var sv = String(stockVal).trim();
+          if (/缺货|否|false|0|✗|×|无/i.test(sv)) inStock = false;
+        }
+        products.push({name: name, in_stock: inStock});
+      }
+      if (products.length === 0) { showToast('未识别到有效产品数据', 'error'); return; }
+      api('POST', '/products?on_conflict=name', products)
+        .then(function() {
+          var msg = '✅ 成功导入 ' + products.length + ' 个产品';
+          if (skipped > 0) msg += '（跳过 ' + skipped + ' 空行）';
+          showToast(msg, 'success');
+          loadProducts().then(renderProductTable);
+        })
+        .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
+    } catch(err) {
+      showToast('文件解析失败，请检查格式', 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
 // ==================== DEMANDS ====================
 function loadAndRender() {
-  api('GET', '/demands?select=*')
+  api('GET', '/demands?select=*&order=created_at.desc')
     .then(function(data) {
       demandList = data || [];
       populateFilterCity();
@@ -338,17 +385,13 @@ function renderRecords() {
     var tr = document.createElement('tr');
     if (!r.in_stock) tr.className = 'oos-row';
     var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
-    var filter = 'city=eq.' + encodeURIComponent(r.city) +
-      '&reporter=eq.' + encodeURIComponent(r.reporter) +
-      '&channel_code=eq.' + encodeURIComponent(r.channel_code) +
-      '&product=eq.' + encodeURIComponent(r.product);
     tr.innerHTML =
       '<td>' + (i+1) + '</td><td>' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
       '<td>' + escapeHTML(r.channel_name) + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
       '<td>' + escapeHTML(r.product) + '</td>' +
       '<td>' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
       '<td>' + r.quantity + '</td>' +
-      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(\'' + filter + '\')">删除</button></td>';
+      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(' + r.id + ')">删除</button></td>';
     tbody.appendChild(tr);
   });
 }
@@ -396,7 +439,7 @@ function exportToExcel() {
 
 function clearRecords() {
   if (!confirm('确定清空所有提报记录？建议先导出Excel。')) return;
-  api('DELETE', '/demands?city=not.is.null').then(function() { loadAndRender(); showToast('已清空', 'info'); });
+  api('DELETE', '/demands?id=gt.0').then(function() { loadAndRender(); showToast('已清空', 'info'); });
 }
 
 function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
