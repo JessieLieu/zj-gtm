@@ -771,12 +771,14 @@ function showColFilter(field, th, evt) {
   popup.style.display = 'block';
   popup.style.position = 'fixed';
 
-  var html = '<input type="text" placeholder="🔍 搜索筛选..." oninput="filterColOptions(this)" style="width:100%;">';
-  html += '<label><input type="radio" name="cf_' + field + '" onchange="setColFilter(\'' + field + '\',\'\',this)" ' + (!colFilters[field] ? 'checked' : '') + '> 全部</label>';
+  var curVals = colFilters[field] || [];
+  if (typeof curVals === 'string') curVals = [curVals]; // migrate old single-value filter
+  var html = '<input type="text" placeholder="🔍 搜索选项..." oninput="filterColOptions(this)" style="width:100%;">';
+  html += '<div style="display:flex;gap:4px;margin-bottom:4px;"><button type="button" class="btn btn-outline btn-sm" style="flex:1;font-size:10px;padding:2px 4px;" onclick="selAllColOpts(this,\'' + field + '\')">全选</button><button type="button" class="btn btn-outline btn-sm" style="flex:1;font-size:10px;padding:2px 4px;" onclick="clearColFilter(\'' + field + '\')">清除</button></div>';
   var keys = Object.keys(vals).sort();
   keys.forEach(function(k) {
-    var sel = colFilters[field] === k ? ' checked' : '';
-    html += '<label><input type="radio" name="cf_' + field + '" onchange="setColFilter(\'' + field + '\',\'' + k.replace(/'/g, "\\'") + '\',this)"' + sel + '> ' + k + ' (' + vals[k] + ')</label>';
+    var sel = curVals.indexOf(k) >= 0 ? ' checked' : '';
+    html += '<label><input type="checkbox" class="cf-cb" data-field="' + field + '" data-val="' + k.replace(/'/g, "&#39;") + '" onchange="toggleColVal(\'' + field + '\',\'' + k.replace(/'/g, "\\'") + '\',this)"' + sel + '> ' + k + ' (' + vals[k] + ')</label>';
   });
   popup.innerHTML = html;
 
@@ -805,31 +807,47 @@ function filterColOptions(inp) {
   });
 }
 
-function setColFilter(field, value, radio) {
-  if (!radio.checked) return;
-  if (value === '') delete colFilters[field];
-  else colFilters[field] = value;
+function toggleColVal(field, value, cb) {
+  if (!colFilters[field]) colFilters[field] = [];
+  if (cb.checked) { if (colFilters[field].indexOf(value) < 0) colFilters[field].push(value); }
+  else { colFilters[field] = colFilters[field].filter(function(v) { return v !== value; }); }
+  if (colFilters[field].length === 0) delete colFilters[field];
+  renderRecords();
+}
+
+function clearColFilter(field) {
+  delete colFilters[field];
   document.querySelector('.col-filter-popup').remove();
   renderRecords();
+}
+
+function selAllColOpts(btn, field) {
+  var popup = btn.closest('.col-filter-popup');
+  var cbs = popup.querySelectorAll('.cf-cb');
+  var allChecked = true;
+  cbs.forEach(function(cb) { if (!cb.checked) allChecked = false; });
+  cbs.forEach(function(cb) { cb.checked = !allChecked; cb.onchange(); });
 }
 
 function renderRecords() {
   var list = demandList;
   Object.keys(colFilters).forEach(function(field) {
-    var val = colFilters[field];
-    if (!val) return;
+    var vals = colFilters[field];
+    if (!vals || (Array.isArray(vals) && vals.length === 0)) return;
+    if (!Array.isArray(vals)) vals = [vals];
     if (field === 'in_stock') {
-      list = list.filter(function(r){ return r.in_stock === (val === '有库存'); });
+      var boolVals = vals.map(function(v) { return v === '有库存'; });
+      list = list.filter(function(r){ return boolVals.indexOf(r.in_stock) >= 0; });
     } else if (field === 'time') {
-      list = list.filter(function(r){ return new Date(r.created_at).toLocaleDateString('zh-CN') === val; });
+      list = list.filter(function(r){ return vals.indexOf(new Date(r.created_at).toLocaleDateString('zh-CN')) >= 0; });
     } else if (field === 'quantity') {
-      list = list.filter(function(r){ return String(r.quantity) === val; });
+      list = list.filter(function(r){ return vals.indexOf(String(r.quantity)) >= 0; });
     } else if (field === 'reason') {
-      list = list.filter(function(r){ return (r.reason || '').toLowerCase().indexOf(val.toLowerCase()) >= 0; });
+      list = list.filter(function(r){ return vals.some(function(v) { return (r.reason || '').toLowerCase().indexOf(v.toLowerCase()) >= 0; }); });
     } else if (field === 'channel_name' || field === 'channel_code' || field === 'product') {
-      list = list.filter(function(r){ return (r[field] || '').toLowerCase().indexOf(val.toLowerCase()) >= 0; });
+      list = list.filter(function(r){ return vals.some(function(v) { return (r[field] || '').toLowerCase().indexOf(v.toLowerCase()) >= 0; }); });
     } else {
-      list = list.filter(function(r){ return r[field] === val; });
+      list = list.filter(function(r){ return vals.indexOf(r[field]) >= 0; });
     }
   });
   var tbody = document.getElementById('recordsTableBody');
