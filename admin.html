@@ -181,10 +181,17 @@ tbody tr:hover { background: #f8f9ff; }
       <div style="margin-top:16px;">
         <table><thead><tr><th><input type="checkbox" onchange="toggleAllProducts(this)"></th><th>序号</th><th>类别</th><th>产品名称</th><th>库存状态</th><th>客户上限</th><th>每日上限</th><th>操作</th></tr></thead><tbody id="productTableBody"></tbody></table>
         <div class="empty-state" id="productEmpty" style="display:none;"><div class="empty-icon">📦</div><p>暂无产品</p></div>
-        <div style="margin-top:12px;display:flex;gap:8px;" id="productBatchBar">
-          <button class="btn btn-danger btn-sm" onclick="batchDeleteProducts()">🗑️ 批量删除</button>
-          <button class="btn btn-outline btn-sm" onclick="batchExportProducts()">📥 导出选中</button>
-          <span style="font-size:12px;color:#888;line-height:30px;" id="productBatchHint"></span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:8px;" id="productBatchBar">
+            <button class="btn btn-danger btn-sm" onclick="batchDeleteProducts()">🗑️ 批量删除</button>
+            <button class="btn btn-outline btn-sm" onclick="batchExportProducts()">📥 导出选中</button>
+            <span style="font-size:12px;color:#888;line-height:30px;" id="productBatchHint"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;" id="productPaginationBar">
+            <button class="btn btn-outline btn-sm" onclick="goProductPage(-1)">◀</button>
+            <span style="font-size:12px;color:#555;" id="productPageInfo"></span>
+            <button class="btn btn-outline btn-sm" onclick="goProductPage(1)">▶</button>
+          </div>
         </div>
       </div>
     </div>
@@ -325,7 +332,7 @@ function sortProductList() {
 
 function loadProducts() {
   return api('GET', '/products?select=*&order=name')
-    .then(function(data) { productList = data || []; sortProductList(); return productList; });
+    .then(function(data) { productPage = 1; productList = data || []; sortProductList(); return productList; });
 }
 
 function populateProductSelect(sel) {
@@ -442,13 +449,29 @@ function getChannelTodayUsed(productName, channel) {
     .catch(function() { return 0; });
 }
 
+function goProductPage(dir) {
+  var maxPage = Math.max(1, Math.ceil(productList.length / productPageSize));
+  productPage = Math.min(maxPage, Math.max(1, productPage + dir));
+  renderProductTable();
+}
+
 function renderProductTable() {
+  var total = productList.length;
+  var maxPage = Math.max(1, Math.ceil(total / productPageSize));
+  if (productPage > maxPage) productPage = maxPage;
+  var start = (productPage - 1) * productPageSize;
+  var paged = productList.slice(start, start + productPageSize);
+
   var tbody = document.getElementById('productTableBody');
   var empty = document.getElementById('productEmpty');
+  var pageInfo = document.getElementById('productPageInfo');
+  var pagBar = document.getElementById('productPaginationBar');
   tbody.innerHTML = '';
-  if (productList.length === 0) { empty.style.display = 'block'; return; }
+  if (total === 0) { empty.style.display = 'block'; if (pagBar) pagBar.style.display = 'none'; return; }
   empty.style.display = 'none';
-  productList.forEach(function(p, i) {
+  if (pagBar) { pagBar.style.display = 'flex'; pageInfo.textContent = '第 ' + productPage + '/' + maxPage + ' 页，共 ' + total + ' 个'; }
+  paged.forEach(function(p, i) {
+    var idx = start + i + 1;
     var tr = document.createElement('tr');
     if (!p.in_stock) tr.className = 'oos-row';
     var cl = {};
@@ -459,7 +482,7 @@ function renderProductTable() {
     }).join(' ');
     tr.innerHTML =
       '<td><input type="checkbox" class="product-cb" value="' + escapeHTML(p.name) + '"></td>' +
-      '<td>' + (i+1) + '</td>' +
+      '<td>' + idx + '</td>' +
       '<td>' + (p.category || '销售机') + '</td>' +
       '<td>' + escapeHTML(p.name) + '</td>' +
       '<td>' + (p.in_stock ? '<span style="color:#27ae60;font-weight:600;">✅ 有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
@@ -746,6 +769,7 @@ function updateStats() {
 
 var colFilters = {}; // { field: value }
 var page = 1, pageSize = 10;
+var productPage = 1, productPageSize = 10;
 
 function clearAllFilters() {
   page = 1;
