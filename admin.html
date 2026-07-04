@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品需求提报系统 - 浙江省</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f0f2f5; min-height: 100vh; color: #1a1a2e; }
+.header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+.header h1 { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+.header-actions { display: flex; gap: 12px; }
+.main { max-width: 1100px; margin: 24px auto; padding: 0 24px; }
+.panel { display: none; } .panel.active { display: block; }
+.card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); padding: 28px 32px; margin-bottom: 20px; }
+.card-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: ''; display: inline-block; width: 4px; height: 18px; background: #0f3460; border-radius: 2px; }
+.form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 600; color: #444; }
+.form-group label .required { color: #e74c3c; margin-left: 2px; }
+.form-group input, .form-group select { height: 40px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; transition: border-color .2s, box-shadow .2s; outline: none; font-family: inherit; }
+.form-group input:focus, .form-group select:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,.08); }
+.form-group select { cursor: pointer; background: #fff; }
+.btn { padding: 10px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: #0f3460; color: #fff; } .btn-primary:hover { background: #1a4a7a; } .btn-primary:disabled { background: #999; cursor: not-allowed; }
+.btn-success { background: #27ae60; color: #fff; } .btn-success:hover { background: #219a52; }
+.btn-danger { background: #e74c3c; color: #fff; } .btn-danger:hover { background: #c0392b; }
+.btn-outline { background: #fff; color: #0f3460; border: 1px solid #0f3460; } .btn-outline:hover { background: #f0f4ff; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.nav-btn { color: #fff !important; border-color: rgba(255,255,255,.7) !important; font-weight: 700 !important; font-size: 13px !important; background: rgba(255,255,255,.12); }
+.nav-btn:hover { background: rgba(255,255,255,.25) !important; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: #fafafa; padding: 12px 14px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e8e8e8; white-space: nowrap; }
+tbody td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; }
+tbody tr:hover { background: #f8f9ff; }
+.oos-row { background: #fff8f8; } .oos-row td { color: #999; }
+.oos-tag { display: inline-block; background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.inline-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.inline-form .form-group { flex: 1; min-width: 140px; }
+.checkbox-group { display: flex; align-items: center; gap: 6px; padding-bottom: 8px; }
+.checkbox-group input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
+.checkbox-group label { cursor: pointer; font-size: 14px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.stat-card { background: #fff; border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); display: flex; align-items: center; gap: 14px; }
+.stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.stat-icon.blue { background: #e8f0fe; color: #0f3460; } .stat-icon.green { background: #e6f7ee; color: #27ae60; }
+.stat-icon.orange { background: #fef3e2; color: #f39c12; } .stat-icon.red { background: #fde8e8; color: #e74c3c; }
+.stat-value { font-size: 26px; font-weight: 700; } .stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 28px; border-radius: 8px; color: #fff; font-weight: 600; z-index: 9999; animation: slideDown .3s ease; font-size: 14px; }
+.toast.success { background: #27ae60; } .toast.error { background: #e74c3c; } .toast.info { background: #0f3460; }
+@keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 12px; padding: 28px; width: 440px; max-width: 90vw; box-shadow: 0 8px 40px rgba(0,0,0,.15); }
+.modal h3 { margin-bottom: 18px; font-size: 18px; }
+.modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.bar input, .bar select { height: 36px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; outline: none; font-family: inherit; }
+.bar input:focus, .bar select:focus { border-color: #0f3460; }
+.empty-state { text-align: center; padding: 48px 20px; color: #bbb; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.footer-info { text-align: center; color: #aaa; font-size: 12px; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📱 管理后台 · 浙江省</h1>
+  <div class="header-actions">
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('submit')">📝 需求提报</button>
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('products')">📦 产品管理</button>
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('records')">📋 提报记录</button>
+  </div>
+</div>
+<div class="main">
+  <!-- ===== TAB: 需求提报 ===== -->
+  <div class="panel active" id="panel-submit">
+    <div class="card">
+      <div class="card-title">新增需求提报</div>
+      <form id="demandForm" onsubmit="return submitDemand(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>地市<span class="required">*</span></label><select id="city" required><option value="">请选择地市</option></select></div>
+          <div class="form-group"><label>填报人<span class="required">*</span></label><input type="text" id="reporter" placeholder="请输入姓名" required></div>
+          <div class="form-group"><label>渠道名称<span class="required">*</span></label><input type="text" id="channelName" placeholder="请输入渠道名称" required></div>
+          <div class="form-group"><label>提货通路<span class="required">*</span></label><select id="deliveryChannel" required onchange="onDeliveryChannelChange()"><option value="">请选择提货通路</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>
+          <div class="form-group" id="channelCodeGroup"><label>渠道八码<span class="required" id="channelCodeStar">*</span></label><input type="text" id="channelCode" placeholder="00开头的10位数字" maxlength="10"></div>
+          <div class="form-group"><label>产品名称<span class="required">*</span></label><select id="product" required onchange="onProductChange()"><option value="">请选择产品</option></select><span id="productStockHint" style="font-size:12px;color:#e74c3c;display:none;">⚠️ 该产品当前缺货</span><span id="productLimitHint" style="font-size:12px;color:#0f3460;display:none;"></span></div>
+          <div class="form-group"><label>产品数量<span class="required">*</span></label><input type="number" id="quantity" placeholder="请输入数量" required min="1" value="1" onchange="onQuantityChange()"></div>
+          <div class="form-group full"><label>提报原因<span style="color:#999;font-weight:400;">（选填）</span></label><input type="text" id="reason" placeholder="请说明需求原因（选填）" maxlength="200"></div>
+        </div>
+        <div style="margin-top:24px;display:flex;gap:12px;">
+          <button type="submit" class="btn btn-primary" id="submitBtn">✅ 提交需求</button>
+          <button type="button" class="btn btn-outline" onclick="resetForm()">🔄 重置</button>
+        </div>
+      </form>
+      <div id="submitSuccess" style="display:none;text-align:center;padding:30px 0;">
+        <div style="width:72px;height:72px;border-radius:50%;background:#e6f7ee;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:36px;">✅</div>
+        <h3 style="color:#27ae60;margin-bottom:8px;">提报成功！</h3>
+        <p id="submitSuccessMsg" style="color:#888;margin-bottom:24px;"></p>
+        <button class="btn btn-primary" onclick="newAdminSubmission()">📝 继续提报</button>
+        <button class="btn btn-outline" onclick="endAdminSubmission()">✓ 结束</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===== TAB: 产品管理 ===== -->
+  <div class="panel" id="panel-products">
+    <div class="card">
+      <div class="card-title">产品列表维护</div>
+      <div class="inline-form">
+        <div class="form-group"><label>产品名称</label><input type="text" id="newProductName" placeholder="输入产品名称"></div>
+        <div class="checkbox-group"><input type="checkbox" id="newProductStock" checked><label for="newProductStock">有库存</label></div>
+        <div class="form-group"><label>每日上限</label><input type="number" id="newProductLimit" placeholder="不限" style="width:80px;" min="0"></div>
+        <button class="btn btn-primary btn-sm" onclick="addProduct()">➕ 添加产品</button>
+        <button class="btn btn-outline btn-sm" onclick="restoreDefaults()">🔄 恢复默认</button>
+        <button class="btn btn-success btn-sm" onclick="document.getElementById('importFile').click()">📥 批量导入</button>
+        <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="handleFileImport(event)">
+        <span style="font-size:11px;color:#999;margin-left:4px;">Excel: A=产品名 B=库存 C=每日上限(可选)</span>
+      </div>
+      <div style="margin-top:16px;">
+        <table><thead><tr><th>序号</th><th>产品名称</th><th>库存状态</th><th>每日上限</th><th>操作</th></tr></thead><tbody id="productTableBody"></tbody></table>
+        <div class="empty-state" id="productEmpty" style="display:none;"><div class="empty-icon">📦</div><p>暂无产品</p></div>
+      </div>
+    </div>
+  </div>
+  <!-- ===== TAB: 提报记录 ===== -->
+  <div class="panel" id="panel-records">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon blue">📋</div><div><div class="stat-value" id="statTotal">0</div><div class="stat-label">总提报数</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">📦</div><div><div class="stat-value" id="statProducts">0</div><div class="stat-label">涉及产品数</div></div></div>
+      <div class="stat-card"><div class="stat-icon orange">🏙️</div><div><div class="stat-value" id="statCities">0</div><div class="stat-label">覆盖地市</div></div></div>
+      <div class="stat-card"><div class="stat-icon red">⚠️</div><div><div class="stat-value" id="statOOS">0</div><div class="stat-label">缺货产品提报</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;">
+        <span>提报记录列表</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <select id="filterCity" onchange="renderRecords()" style="height:34px;padding:0 8px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;"><option value="">全部地市</option></select>
+          <input type="text" id="filterProduct" placeholder="搜索产品..." oninput="renderRecords()" style="height:34px;width:160px;padding:0 8px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;">
+          <button class="btn btn-success btn-sm" onclick="exportToExcel()">📥 导出Excel</button>
+          <button class="btn btn-success btn-sm" onclick="exportWaterLevel()" style="background:#0f3460;">📊 导出水位模板</button>
+          <button class="btn btn-danger btn-sm" onclick="clearRecords()">🗑️ 清空记录</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>序号</th><th>提报时间</th><th>地市</th><th>填报人</th><th>渠道名称</th><th>提货通路</th><th>渠道八码</th><th>产品名称</th><th>库存状态</th><th>产品数量</th><th>提报原因</th><th>操作</th></tr></thead><tbody id="recordsTableBody"></tbody></table>
+        <div class="empty-state" id="recordsEmpty"><div class="empty-icon">📭</div><p>暂无提报记录</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal"><h3>确认删除</h3><p>确定要删除这条提报记录吗？</p>
+    <div class="modal-buttons"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-danger" id="deleteConfirmBtn">确认删除</button></div>
+  </div>
+</div>
+<div class="footer-info">产品需求提报系统 v2.0 · 数据云端共享 · 浙江省</div>
+
+<script>
+var SB_URL = 'https://hrehnrlswtgkucoeoezb.supabase.co/rest/v1';
+var SB_KEY = 'sb_publishable_n1A-HZY2F5F7Vf5jni23Vw_WvTcvHdf';
+var CITIES = ['杭州市','宁波市','温州市','嘉兴市','湖州市','绍兴市','金华市','衢州市','舟山市','台州市','丽水市'];
+var DEFAULT_PRODUCTS = [
+  {name:'手机 A-100',in_stock:true},{name:'手机 A-200',in_stock:true},{name:'手机 A-300 Pro',in_stock:true},
+  {name:'手机 B-100',in_stock:true},{name:'手机 B-200',in_stock:false},{name:'手机 C-100',in_stock:true},
+  {name:'手机 C-200 Pro',in_stock:true},{name:'平板 D-100',in_stock:true},{name:'平板 D-200',in_stock:false},
+  {name:'穿戴 E-100',in_stock:true},{name:'穿戴 E-200 Pro',in_stock:true},{name:'配件 F-100',in_stock:true}
+];
+var productList = [];
+var demandList = [];
+var pendingDeleteId = null;
+
+function showToast(msg, type) {
+  var c = document.getElementById('toastContainer');
+  var t = document.createElement('div');
+  t.className = 'toast ' + (type||'info'); t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ t.remove(); },300); },2000);
+}
+
+// ==================== API ====================
+function api(method, path, body) {
+  var opts = { method: method, headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } };
+  if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  return fetch(SB_URL + path, opts).then(function(r) {
+    if (!r.ok) return r.text().then(function(t) { throw new Error(r.status + ': ' + t); });
+    var ct = r.headers.get('content-type') || '';
+    return ct.indexOf('application/json') >= 0 ? r.json() : r.text();
+  });
+}
+
+// ==================== MODAL ====================
+function openDeleteModal(id) { pendingDeleteId = id; document.getElementById('deleteModal').classList.add('show'); }
+function closeModal() { pendingDeleteId = null; document.getElementById('deleteModal').classList.remove('show'); }
+document.getElementById('deleteConfirmBtn').addEventListener('click', function() {
+  if (!pendingDeleteId) return;
+  api('DELETE', '/demands?id=eq.' + pendingDeleteId)
+    .then(function() { showToast('已删除', 'success'); loadAndRender(); closeModal(); })
+    .catch(function(e) { showToast('删除失败', 'error'); });
+});
+
+// ==================== TABS ====================
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'submit') { populateCities(); loadProducts(); onDeliveryChannelChange(); }
+  else if (tab === 'products') { loadProducts().then(renderProductTable); }
+  else if (tab === 'records') { loadAndRender(); }
+}
+
+function populateCities() {
+  var sel = document.getElementById('city');
+  if (sel.options.length > 1) return;
+  CITIES.forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+}
+
+// ==================== PRODUCTS ====================
+function loadProducts() {
+  return api('GET', '/products?select=*&order=name')
+    .then(function(data) { productList = data || []; return productList; });
+}
+
+function loadProductsIntoSelect() {
+  var sel = document.getElementById('product');
+  loadProducts().then(function(list) {
+    while (sel.options.length > 1) sel.remove(1);
+    list.forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name + (p.in_stock ? '' : ' [缺货]');
+      if (!p.in_stock) opt.style.color = '#e74c3c';
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function onDeliveryChannelChange() {
+  var v = document.getElementById('deliveryChannel').value;
+  var group = document.getElementById('channelCodeGroup');
+  var input = document.getElementById('channelCode');
+  var star = document.getElementById('channelCodeStar');
+  var needsCode = (v === '移动' || v === '和动力');
+  group.style.display = needsCode ? '' : 'none';
+  star.style.display = needsCode ? '' : 'none';
+  if (!needsCode) { input.value = ''; input.required = false; }
+  else { input.required = true; }
+}
+
+function onProductChange() {
+  var name = document.getElementById('product').value;
+  var p = productList.find(function(x){ return x.name === name; });
+  document.getElementById('productStockHint').style.display = (p && !p.in_stock) ? 'block' : 'none';
+  var limitHint = document.getElementById('productLimitHint');
+  if (p && p.daily_limit) {
+    getTodayUsed(name).then(function(used) {
+      var remain = Math.max(0, p.daily_limit - used);
+      limitHint.textContent = '📊 今日上限 ' + p.daily_limit + ' 件，已提 ' + used + ' 件，剩余 ' + remain + ' 件';
+      limitHint.style.display = 'block';
+      limitHint._remain = remain;
+      limitHint._dailyLimit = p.daily_limit;
+    });
+  } else {
+    limitHint.style.display = 'none';
+    limitHint._remain = null;
+    limitHint._dailyLimit = null;
+  }
+}
+
+function onQuantityChange() {
+  var limitHint = document.getElementById('productLimitHint');
+  var qty = parseInt(document.getElementById('quantity').value) || 0;
+  if (limitHint._remain !== null && limitHint._remain !== undefined && qty > limitHint._remain) {
+    showToast('⚠️ 超出今日剩余上限（' + limitHint._remain + ' 件）', 'error');
+  }
+}
+
+function getTodayUsed(productName) {
+  var today = new Date();
+  var d = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  return api('GET', '/demands?select=quantity&product=eq.' + encodeURIComponent(productName) + '&created_at=gte.' + d)
+    .then(function(data) {
+      var total = 0;
+      (data || []).forEach(function(r) { total += r.quantity; });
+      return total;
+    })
+    .catch(function() { return 0; });
+}
+
+function renderProductTable() {
+  var tbody = document.getElementById('productTableBody');
+  var empty = document.getElementById('productEmpty');
+  tbody.innerHTML = '';
+  if (productList.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  productList.forEach(function(p, i) {
+    var tr = document.createElement('tr');
+    if (!p.in_stock) tr.className = 'oos-row';
+    tr.innerHTML =
+      '<td>' + (i+1) + '</td>' +
+      '<td>' + escapeHTML(p.name) + '</td>' +
+      '<td>' + (p.in_stock ? '<span style="color:#27ae60;font-weight:600;">✅ 有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
+      '<td><input type="number" value="' + (p.daily_limit || '') + '" onchange="updateDailyLimit(\'' + encodeURIComponent(p.name) + '\',this.value)" style="width:64px;height:30px;font-size:13px;padding:0 6px;border:1px solid #d9d9d9;border-radius:4px;" placeholder="不限" min="0"> 件/天</td>' +
+      '<td>' +
+        '<button class="btn btn-outline btn-sm" onclick="toggleStock(\'' + encodeURIComponent(p.name) + '\')" style="margin-right:6px;">' + (p.in_stock ? '🔴 标为缺货' : '🟢 标为有货') + '</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + encodeURIComponent(p.name) + '\')">删除</button>' +
+      '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function addProduct() {
+  var name = document.getElementById('newProductName').value.trim();
+  var inStock = document.getElementById('newProductStock').checked;
+  var limitVal = document.getElementById('newProductLimit').value.trim();
+  var limit = limitVal ? parseInt(limitVal) : null;
+  if (!name) { showToast('请输入产品名称', 'error'); return; }
+  api('POST', '/products?on_conflict=name', {name: name, in_stock: inStock, daily_limit: limit})
+    .then(function() {
+      document.getElementById('newProductName').value = '';
+      document.getElementById('newProductStock').checked = true;
+      document.getElementById('newProductLimit').value = '';
+      loadProducts().then(renderProductTable);
+      showToast('添加成功', 'success');
+    }).catch(function(e) { showToast('添加失败: ' + e.message, 'error'); });
+}
+
+function updateDailyLimit(name, val) {
+  name = decodeURIComponent(name);
+  var v = val.trim();
+  var limit = v ? parseInt(v) : null;
+  if (v && (isNaN(limit) || limit < 0)) { showToast('请输入有效数字', 'error'); loadProducts().then(renderProductTable); return; }
+  api('PATCH', '/products?name=eq.' + encodeURIComponent(name), {daily_limit: limit})
+    .then(function() { loadProducts().then(renderProductTable); showToast('已更新', 'info'); })
+    .catch(function(e) { showToast('更新失败', 'error'); });
+}
+
+function toggleStock(name) {
+  name = decodeURIComponent(name);
+  var p = productList.find(function(x){ return x.name === name; });
+  if (!p) return;
+  api('PATCH', '/products?name=eq.' + encodeURIComponent(name), {in_stock: !p.in_stock})
+    .then(function() { loadProducts().then(renderProductTable); showToast('已更新', 'info'); })
+    .catch(function(e) { showToast('更新失败', 'error'); });
+}
+
+function deleteProduct(name) {
+  name = decodeURIComponent(name);
+  if (!confirm('确定删除 "' + name + '"？')) return;
+  api('DELETE', '/products?name=eq.' + encodeURIComponent(name))
+    .then(function() { loadProducts().then(renderProductTable); showToast('已删除', 'success'); })
+    .catch(function(e) { showToast('删除失败', 'error'); });
+}
+
+function restoreDefaults() {
+  if (!confirm('恢复默认产品列表？自定义产品将被覆盖。')) return;
+  api('DELETE', '/products?in_stock=is.true').then(function(){
+    api('DELETE', '/products?in_stock=is.false').then(function(){
+      api('POST', '/products', DEFAULT_PRODUCTS)
+        .then(function() { loadProducts().then(renderProductTable); showToast('已恢复', 'success'); });
+    });
+  });
+}
+
+// ==================== BATCH IMPORT ====================
+function handleFileImport(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  showToast('正在解析...', 'info');
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      var wb = XLSX.read(evt.target.result, {type: 'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header: 1});
+      if (!rows || rows.length === 0) { showToast('Excel 为空', 'error'); return; }
+      var products = [];
+      var skipped = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var name = row[0] ? String(row[0]).trim() : '';
+        if (!name) { skipped++; continue; }
+        var stockVal = row[1];
+        var inStock = true;
+        if (stockVal !== undefined && stockVal !== null && String(stockVal).trim() !== '') {
+          var sv = String(stockVal).trim();
+          if (/缺货|否|false|0|✗|×|无/i.test(sv)) inStock = false;
+        }
+        var limitVal = row[2];
+        var limit = null;
+        if (limitVal !== undefined && limitVal !== null && String(limitVal).trim() !== '') {
+          limit = parseInt(limitVal);
+          if (isNaN(limit) || limit < 0) limit = null;
+        }
+        products.push({name: name, in_stock: inStock, daily_limit: limit});
+      }
+      if (products.length === 0) { showToast('未识别到有效产品数据', 'error'); return; }
+      api('POST', '/products?on_conflict=name', products)
+        .then(function() {
+          var msg = '✅ 成功导入 ' + products.length + ' 个产品';
+          if (skipped > 0) msg += '（跳过 ' + skipped + ' 空行）';
+          showToast(msg, 'success');
+          loadProducts().then(renderProductTable);
+        })
+        .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
+    } catch(err) {
+      showToast('文件解析失败，请检查格式', 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
+// ==================== DEMANDS ====================
+function loadAndRender() {
+  api('GET', '/demands?select=*&order=created_at.desc')
+    .then(function(data) {
+      demandList = data || [];
+      populateFilterCity();
+      renderRecords();
+      updateStats();
+    }).catch(function(e) {
+      console.error('加载记录失败:', e);
+      showToast('加载记录失败，请刷新重试', 'error');
+    });
+}
+
+function updateStats() {
+  var all = demandList;
+  document.getElementById('statTotal').textContent = all.length;
+  var pSet = {}, cSet = {}, oos = 0;
+  all.forEach(function(r){ pSet[r.product]=true; cSet[r.city]=true; if(!r.in_stock) oos++; });
+  document.getElementById('statProducts').textContent = Object.keys(pSet).length;
+  document.getElementById('statCities').textContent = Object.keys(cSet).length;
+  document.getElementById('statOOS').textContent = oos;
+}
+
+function populateFilterCity() {
+  var sel = document.getElementById('filterCity');
+  while (sel.options.length > 1) sel.remove(1);
+  var seen = {};
+  demandList.forEach(function(r) {
+    if (!seen[r.city]) { seen[r.city] = true; var o = document.createElement('option'); o.value = r.city; o.textContent = r.city; sel.appendChild(o); }
+  });
+}
+
+function renderRecords() {
+  var fc = document.getElementById('filterCity').value;
+  var fp = document.getElementById('filterProduct').value.trim().toLowerCase();
+  var list = demandList;
+  if (fc) list = list.filter(function(r){ return r.city === fc; });
+  if (fp) list = list.filter(function(r){ return r.product.toLowerCase().indexOf(fp) >= 0; });
+  var tbody = document.getElementById('recordsTableBody');
+  var empty = document.getElementById('recordsEmpty');
+  tbody.innerHTML = '';
+  if (list.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.forEach(function(r, i) {
+    var tr = document.createElement('tr');
+    if (!r.in_stock) tr.className = 'oos-row';
+    var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
+    tr.innerHTML =
+      '<td>' + (i+1) + '</td><td>' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
+      '<td>' + escapeHTML(r.channel_name) + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
+      '<td>' + escapeHTML(r.product) + '</td>' +
+      '<td>' + (r.in_stock ? '<span style="color:#27ae60;">有库存</span>' : '<span class="oos-tag">缺货</span>') + '</td>' +
+      '<td>' + r.quantity + '</td>' +
+      '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHTML(r.reason||'') + '">' + escapeHTML(r.reason||'—') + '</td>' +
+      '<td><button class="btn btn-danger btn-sm" onclick="openDeleteModal(' + r.id + ')">删除</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// ==================== SUBMIT ====================
+function submitDemand(e) {
+  e.preventDefault();
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var city = document.getElementById('city').value;
+  var reporter = document.getElementById('reporter').value.trim();
+  var channelName = document.getElementById('channelName').value.trim();
+  var deliveryChannel = document.getElementById('deliveryChannel').value;
+  var channelCode = document.getElementById('channelCode').value.trim();
+  var product = document.getElementById('product').value;
+  var quantity = parseInt(document.getElementById('quantity').value);
+  var reason = document.getElementById('reason').value.trim();
+
+  // 八码验证：仅移动/和动力需要
+  var needsCode = (deliveryChannel === '移动' || deliveryChannel === '和动力');
+  if (needsCode) {
+    if (!/^00\d{8}$/.test(channelCode)) { showToast('渠道八码须为00开头的10位数字', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
+  } else {
+    channelCode = ''; // 非移动/和动力不传八码
+  }
+
+  var pObj = productList.find(function(x){ return x.name === product; });
+  var inStock = pObj ? pObj.in_stock : true;
+
+  // 每日上限检查
+  if (pObj && pObj.daily_limit) {
+    getTodayUsed(product).then(function(used) {
+      if (used + quantity > pObj.daily_limit) {
+        showToast('⚠️ 超出今日上限！已提' + used + '件，上限' + pObj.daily_limit + '件，剩余' + Math.max(0, pObj.daily_limit - used) + '件', 'error');
+        btn.disabled = false; btn.textContent = '✅ 提交需求';
+        return;
+      }
+      doSubmit();
+    }).catch(function() { doSubmit(); });
+  } else {
+    doSubmit();
+  }
+
+  function doSubmit() {
+    api('POST', '/demands', [{city: city, reporter: reporter, channel_name: channelName, delivery_channel: deliveryChannel, channel_code: channelCode, product: product, in_stock: inStock, quantity: quantity, reason: reason}])
+      .then(function() {
+        document.getElementById('demandForm').style.display = 'none';
+        document.getElementById('submitSuccess').style.display = 'block';
+        document.getElementById('submitSuccessMsg').textContent = '地市：' + city + ' | 产品：' + product + ' × ' + quantity;
+        btn.disabled = false; btn.textContent = '✅ 提交需求';
+      })
+      .catch(function(err) { showToast('提交失败: ' + err.message, 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; });
+  }
+  return false;
+}
+
+function resetForm() { document.getElementById('demandForm').reset(); document.getElementById('demandForm').style.display = ''; document.getElementById('submitSuccess').style.display = 'none'; document.getElementById('productStockHint').style.display = 'none'; document.getElementById('productLimitHint').style.display = 'none'; onDeliveryChannelChange(); }
+function newAdminSubmission() { resetForm(); }
+function endAdminSubmission() { document.getElementById('submitSuccessMsg').textContent += ' | 感谢提报！'; }
+
+// ==================== EXPORT ====================
+function exportToExcel() {
+  if (demandList.length === 0) { showToast('无记录可导出', 'error'); return; }
+  var data = [['序号','提报时间','地市','填报人','渠道名称','提货通路','渠道八码','产品名称','库存状态','产品数量','提报原因']];
+  demandList.forEach(function(r, i) {
+    var t = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
+    data.push([i+1, t, r.city, r.reporter, r.channel_name, r.delivery_channel, r.channel_code, r.product, r.in_stock ? '有库存' : '缺货', r.quantity, r.reason || '']);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:6},{wch:22},{wch:10},{wch:12},{wch:20},{wch:14},{wch:12},{wch:18},{wch:10},{wch:10},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, ws, '产品需求提报');
+  var now = new Date();
+  var fn = '浙江省需求提报_' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '.xlsx';
+  XLSX.writeFile(wb, fn);
+  showToast('📥 已导出: ' + fn, 'success');
+}
+
+function exportWaterLevel() {
+  if (demandList.length === 0) { showToast('无记录可导出', 'error'); return; }
+  // Collect unique products
+  var products = [];
+  var productSet = {};
+  demandList.forEach(function(r) {
+    if (!productSet[r.product]) { productSet[r.product] = true; products.push(r.product); }
+  });
+  products.sort();
+  // 移动/和动力：按唯一八码合并；太力/天翼/联通：按唯一Account name合并
+  var groups = {};
+  var groupOrder = [];
+  demandList.forEach(function(r) {
+    var dc = (r.delivery_channel || '').trim();
+    var isYD = (dc === '移动' || dc === '和动力');
+    // 移动/和动力按通路+八码分组，太力/天翼/联通按通路+客户名分组（均不考虑地市）
+    var key = isYD ? ('YD|||' + dc + '|||' + (r.channel_code || '').trim()) : ('QT|||' + dc + '|||' + (r.channel_name || '').trim());
+    if (!groups[key]) {
+      groups[key] = {
+        city: r.city, channel_name: (r.channel_name || '').trim(), delivery_channel: dc,
+        channel_code: isYD ? (r.channel_code || '').trim() : '',
+        products: {}, total: 0
+      };
+      groupOrder.push(key);
+    }
+    // 合并同组下的产品数量
+    groups[key].products[r.product] = (groups[key].products[r.product] || 0) + r.quantity;
+    groups[key].total += r.quantity;
+  });
+  // Build header
+  var header = ['地市', 'Account name（源为空为Orig name）', '提货通路\n（移动/和动力/天翼/太力/联通）', '移动通路八码', '分货数量'];
+  products.forEach(function(p) { header.push(p); });
+  // Build rows
+  var data = [header];
+  groupOrder.forEach(function(key) {
+    var g = groups[key];
+    var row = [g.city, g.channel_name, g.delivery_channel, g.channel_code, g.total];
+    products.forEach(function(p) { row.push(g.products[p] || 0); });
+    data.push(row);
+  });
+  // Export via SheetJS
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, '水位模板');
+  var now = new Date();
+  var fn = '浙江省需求水位模板_' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '.xlsx';
+  XLSX.writeFile(wb, fn);
+  showToast('📊 已导出: ' + fn, 'success');
+}
+
+function clearRecords() {
+  if (!confirm('确定清空所有提报记录？建议先导出Excel。')) return;
+  api('DELETE', '/demands?id=gt.0').then(function() { loadAndRender(); showToast('已清空', 'info'); });
+}
+
+function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+document.getElementById('newProductName').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addProduct(); } });
+
+// ==================== STARTUP ====================
+(function() { populateCities(); loadProductsIntoSelect(); onDeliveryChannelChange(); })();
+</script>
+</body>
+</html>
