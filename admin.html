@@ -826,13 +826,16 @@ function clearColFilter(field) {
 
 function selAllColOpts(cb, field) {
   var popup = cb.closest('.col-filter-popup');
-  // 仅影响当前可见的选项（被搜索过滤隐藏的不处理）
+  var newVals = [];
   popup.querySelectorAll('.cf-cb').forEach(function(c) {
     var label = c.closest('label');
-    if (label && label.style.display === 'none') return;
-    c.checked = cb.checked;
-    c.onchange();
+    var hidden = (label && label.style.display === 'none');
+    if (hidden) { if (c.checked) newVals.push(c.getAttribute('data-val')); }
+    else { c.checked = cb.checked; if (cb.checked) newVals.push(c.getAttribute('data-val')); }
   });
+  if (newVals.length === 0) delete colFilters[field];
+  else colFilters[field] = newVals;
+  renderRecords();
 }
 
 function renderRecords() {
