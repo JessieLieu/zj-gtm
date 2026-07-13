@@ -76,6 +76,9 @@ tbody tr:hover { background: #f8f9ff; }
 .wl-dropdown-menu label:hover { color: #0f3460; }
 .wl-dropdown:hover .wl-dropdown-menu { display: block; }
 .wl-dropdown-menu button { display: block; }
+.channel-suggestions { position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.1); z-index: 170; font-size: 13px; }
+.channel-suggestions div { padding: 6px 10px; cursor: pointer; }
+.channel-suggestions div:hover { background: #f0f4ff; color: #0f3460; }
 .col-filter-btn { cursor: pointer; color: #bbb; font-size: 11px; padding: 2px; border-radius: 3px; }
 .col-filter-btn:hover { color: #0f3460; background: #e8f0fe; }
 .col-filter-popup { display: none; position: fixed; background: #fff; border: 1px solid #d0d0d0; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.18); z-index: 160; min-width: 200px; max-width: 360px; max-height: 360px; overflow-y: auto; padding: 8px 6px; }
@@ -125,6 +128,7 @@ tbody tr:hover { background: #f8f9ff; }
     <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('submit')">📝 需求提报</button>
     <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('products')">📦 产品管理</button>
     <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('records')">📋 提报记录</button>
+	    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('channels')">🏢 渠道管理</button>
   </div>
 </div>
 <div class="main">
@@ -136,7 +140,7 @@ tbody tr:hover { background: #f8f9ff; }
         <div class="form-grid">
           <div class="form-group"><label>地市<span class="required">*</span></label><select id="city" required><option value="">请选择地市</option></select></div>
           <div class="form-group"><label>填报人<span class="required">*</span></label><input type="text" id="reporter" placeholder="请输入姓名" required></div>
-          <div class="form-group"><label>渠道名称<span class="required">*</span></label><input type="text" id="channelName" placeholder="请输入渠道名称" required></div>
+          <div class="form-group"><label>渠道名称<span class="required">*</span></label><div style="position:relative;"><input type="text" id="channelName" placeholder="请输入渠道名称" autocomplete="off" required oninput="showChannelSuggestions(this.value)" onfocus="showChannelSuggestions(this.value)" onblur="hideChannelSuggestions()"><div id="channelSuggestions" class="channel-suggestions" style="display:none;"></div></div></div>
           <div class="form-group"><label>提货通路<span class="required">*</span></label><select id="deliveryChannel" required onchange="onDeliveryChannelChange()"><option value="">请选择提货通路</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>
           <div class="form-group" id="channelCodeGroup"><label>渠道八码<span class="required" id="channelCodeStar">*</span></label><input type="text" id="channelCode" placeholder="00开头的10位数字" maxlength="10"></div>
           <div class="form-group full"><label>产品明细<span class="required">*</span></label>
@@ -196,6 +200,24 @@ tbody tr:hover { background: #f8f9ff; }
       </div>
     </div>
   </div>
+  <!-- ===== TAB: 渠道管理 ===== -->
+  <div class="panel" id="panel-channels">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;">
+        <span>渠道列表</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success btn-sm" onclick="document.getElementById('channelImportFile').click()">📥 导入Excel</button>
+          <input type="file" id="channelImportFile" accept=".xlsx,.xls" style="display:none" onchange="importChannels(event)">
+          <button class="btn btn-danger btn-sm" onclick="batchDeleteChannels()">🗑️ 批量删除</button>
+          <button class="btn btn-outline btn-sm" onclick="clearAllChannels()">清空全部</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th><input type="checkbox" onchange="toggleAllChannels(this)"></th><th>序号</th><th>客户全称</th><th>客户简称</th><th>客户编码</th><th>地市</th><th>操作</th></tr></thead><tbody id="channelTableBody"></tbody></table>
+      </div>
+      <div class="empty-state" id="channelEmpty"><div class="empty-icon">🏢</div><p>暂无渠道数据，请导入Excel</p></div>
+    </div>
+  </div>
   <!-- ===== TAB: 提报记录 ===== -->
   <div class="panel" id="panel-records">
     <div class="stats-row">
@@ -253,6 +275,7 @@ tbody tr:hover { background: #f8f9ff; }
   </div>
 </div>
 <div id="toastContainer"></div>
+<datalist id="channelDatalist"></datalist>
 <div class="modal-overlay" id="deleteModal">
   <div class="modal"><h3>确认删除</h3><p>确定要删除这条提报记录吗？</p>
     <div class="modal-buttons"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-danger" id="deleteConfirmBtn">确认删除</button></div>
@@ -311,6 +334,7 @@ function switchTab(tab) {
   if (tab === 'submit') { populateCities(); loadProducts(); onDeliveryChannelChange(); }
   else if (tab === 'products') { loadProducts().then(renderProductTable); }
   else if (tab === 'records') { loadAndRender(); }
+  else if (tab === 'channels') { loadChannels(); }
 }
 
 function populateCities() {
@@ -1153,7 +1177,7 @@ function exportWaterLevelGroup(sourceList, channels, filename, label) {
   });
 
   // 表头
-  var header = ['地市', 'Account name（源为空为Orig name）', '提货通路\n（移动/和动力/天翼/太力/联通）'];
+  var header = ['地市', '提货通路\n（移动/和动力/天翼/太力/联通）', 'Account name（源为空为Orig name）'];
   if (hasYD) header.push('移动通路八码');
   header.push('分货数量');
   products.forEach(function(p) { header.push(p); });
@@ -1162,7 +1186,7 @@ function exportWaterLevelGroup(sourceList, channels, filename, label) {
   // 数据行
   grpOrder.forEach(function(key) {
     var g = grpMap[key];
-    var row = [g.city, g.channel_name, g.delivery_channel];
+    var row = [g.city, g.delivery_channel, g.channel_name];
     if (hasYD) row.push(g.channel_code);
     row.push(g.total);
     products.forEach(function(p) { row.push(g.products[p] || 0); });
@@ -1224,14 +1248,14 @@ function exportWaterLevelMerged() {
     grpMap[key].total += r.quantity;
   });
 
-  var header = ['地市', 'Account name（源为空为Orig name）', '提货通路\n（移动/和动力/天翼/太力/联通）'];
+  var header = ['地市', '提货通路\n（移动/和动力/天翼/太力/联通）', 'Account name（源为空为Orig name）'];
   if (hasYD) header.push('移动通路八码');
   header.push('分货数量');
   products.forEach(function(p) { header.push(p); });
   var data = mapRows.concat([header]);
   grpOrder.forEach(function(key) {
     var g = grpMap[key];
-    var row = [g.city, g.channel_name, g.delivery_channel];
+    var row = [g.city, g.delivery_channel, g.channel_name];
     if (hasYD) row.push(g.channel_code);
     row.push(g.total);
     products.forEach(function(p) { row.push(g.products[p] || 0); });
@@ -1285,8 +1309,136 @@ function downloadWorkbook(wb, filename) {
 function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 document.getElementById('newProductName').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addProduct(); } });
 
+// ==================== CHANNEL MANAGEMENT ====================
+var channelList = [];
+
+function loadChannels() {
+  api('GET', '/channels?select=*&order=full_name')
+    .then(function(data) { channelList = data || []; renderChannelTable(); updateChannelDatalist(); })
+    .catch(function(e) { console.error(e); });
+}
+
+function renderChannelTable() {
+  var tbody = document.getElementById('channelTableBody');
+  var empty = document.getElementById('channelEmpty');
+  tbody.innerHTML = '';
+  if (channelList.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  channelList.forEach(function(c, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input type="checkbox" class="channel-cb" value="' + c.id + '"></td>' +
+      '<td>' + (i+1) + '</td><td>' + escapeHTML(c.full_name || '') + '</td>' +
+      '<td>' + escapeHTML(c.short_name || '') + '</td><td>' + escapeHTML(c.code || '') + '</td>' +
+      '<td>' + escapeHTML(c.city || '') + '</td>' +
+      '<td><button class="btn btn-danger btn-sm" onclick="deleteChannel(' + c.id + ')">删除</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleAllChannels(cb) {
+  document.querySelectorAll('.channel-cb').forEach(function(c) { c.checked = cb.checked; });
+}
+
+function batchDeleteChannels() {
+  var ids = Array.from(document.querySelectorAll('.channel-cb:checked')).map(function(c) { return parseInt(c.value); });
+  if (ids.length === 0) { showToast('请先勾选渠道', 'error'); return; }
+  if (!confirm('确定删除选中的 ' + ids.length + ' 个渠道？')) return;
+  var i = 0;
+  function delNext() {
+    if (i >= ids.length) { loadChannels(); showToast('已删除' + ids.length + '个渠道', 'success'); return; }
+    api('DELETE', '/channels?id=eq.' + ids[i]).then(function() { i++; delNext(); }).catch(function() { i++; delNext(); });
+  }
+  delNext();
+}
+
+function deleteChannel(id) {
+  if (!confirm('确定删除？')) return;
+  api('DELETE', '/channels?id=eq.' + id).then(function() { loadChannels(); showToast('已删除', 'success'); });
+}
+
+function clearAllChannels() {
+  if (!confirm('确定清空全部渠道？')) return;
+  api('DELETE', '/channels?id=gt.0').then(function() { loadChannels(); showToast('已清空', 'info'); });
+}
+
+function importChannels(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  showToast('正在导入...', 'info');
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    var wb = new ExcelJS.Workbook();
+    wb.xlsx.load(evt.target.result).then(function() {
+      var ws = wb.getWorksheet(1);
+      if (!ws) { showToast('Excel为空', 'error'); return; }
+      var rows = [];
+      ws.eachRow(function(row) { var vals = []; row.eachCell(function(cell) { vals.push(cell.value); }); rows.push(vals); });
+      if (rows.length <= 1) { showToast('Excel为空', 'error'); return; }
+      // A=客户全称 B=客户简称 C=客户编码 D=省 E=市 F=区县 G=准入状态
+      var chs = [];
+      for (var r = 1; r < rows.length; r++) {
+        var row = rows[r];
+        var fn = row[0] ? String(row[0]).trim() : '';
+        if (!fn) continue;
+        chs.push({ full_name: fn, short_name: row[1] ? String(row[1]).trim() : null, code: row[2] ? String(row[2]).trim() : null, province: row[3] ? String(row[3]).trim() : null, city: row[4] ? String(row[4]).trim() : null, district: row[5] ? String(row[5]).trim() : null, status: row[6] ? String(row[6]).trim() : null });
+      }
+      if (chs.length === 0) { showToast('未识别到渠道数据', 'error'); return; }
+      api('POST', '/channels', chs)
+        .then(function() { showToast('✅ 导入 ' + chs.length + ' 个渠道', 'success'); loadChannels(); })
+        .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
+    }).catch(function() { showToast('文件读取失败', 'error'); });
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
+function updateChannelDatalist() {
+  var dl = document.getElementById('channelDatalist');
+  if (!dl) return;
+  dl.innerHTML = '';
+  channelList.forEach(function(c) { var o = document.createElement('option'); o.value = c.full_name; dl.appendChild(o); });
+  // Also update index.html's datalist if it exists
+  var dl2 = parent.document ? parent.document.getElementById('channelDatalist') : null;
+}
+
+// Load channel datalist on startup
+var channelNames = [];
+
+function initChannelDatalist() {
+  api('GET', '/channels?select=full_name&order=full_name')
+    .then(function(data) { channelNames = (data || []).map(function(c) { return c.full_name; }); })
+    .catch(function() {});
+}
+
+function showChannelSuggestions(val) {
+  var div = document.getElementById('channelSuggestions');
+  if (!div) return;
+  var kw = (val || '').trim().toLowerCase();
+  if (!kw) { div.style.display = 'none'; return; }
+  var matches = channelNames.filter(function(n) { return n.toLowerCase().indexOf(kw) >= 0; }).slice(0, 8);
+  if (matches.length === 0) { div.style.display = 'none'; return; }
+  div.innerHTML = '';
+  matches.forEach(function(n) {
+    var item = document.createElement('div');
+    // highlight matched text
+    var idx = n.toLowerCase().indexOf(kw);
+    item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
+    item.onmousedown = function() { document.getElementById('channelName').value = n; div.style.display = 'none'; };
+    div.appendChild(item);
+  });
+  div.style.display = 'block';
+}
+
+function hideChannelSuggestions() {
+  setTimeout(function() {
+    var div = document.getElementById('channelSuggestions');
+    if (div) div.style.display = 'none';
+  }, 150);
+}
+
 // ==================== STARTUP ====================
-(function() { populateCities(); loadProductsIntoSelect(); onDeliveryChannelChange(); })();
+(function() { populateCities(); loadProductsIntoSelect(); onDeliveryChannelChange(); initChannelDatalist(); })();
 </script>
 </body>
 </html>

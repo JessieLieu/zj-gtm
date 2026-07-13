@@ -39,6 +39,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Ya
 .product-entry input[type=number] { width: 72px; height: 40px; padding: 0 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; outline: none; }
 .product-entry input[type=number]:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,.08); }
 .entry-hint { white-space: nowrap; }
+.channel-suggestions { position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.1); z-index: 170; font-size: 14px; }
+.channel-suggestions div { padding: 8px 12px; cursor: pointer; }
+.channel-suggestions div:hover { background: #f0f4ff; color: #0f3460; }
 .success-card p { color: #888; margin-bottom: 24px; }
 .footer { text-align: center; color: #bbb; font-size: 12px; margin-top: 16px; }
 @media (max-width: 480px) {
@@ -69,7 +72,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Ya
       <div class="form-grid">
         <div class="form-group"><label>地市<span class="required">*</span></label><select id="city" required><option value="">请选择地市</option></select></div>
         <div class="form-group"><label>填报人<span class="required">*</span></label><input type="text" id="reporter" placeholder="请输入姓名" required></div>
-        <div class="form-group"><label>渠道名称<span class="required">*</span></label><input type="text" id="channelName" placeholder="请输入渠道名称" required></div>
+        <div class="form-group"><label>渠道名称<span class="required">*</span></label><div style="position:relative;"><input type="text" id="channelName" placeholder="请输入渠道名称" autocomplete="off" required oninput="showChannelSuggestions(this.value)" onfocus="showChannelSuggestions(this.value)" onblur="hideChannelSuggestions()"><div id="channelSuggestions" class="channel-suggestions" style="display:none;"></div></div></div>
         <div class="form-group"><label>提货通路<span class="required">*</span></label><select id="deliveryChannel" required onchange="onDeliveryChannelChange()"><option value="">请选择提货通路</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>
         <div class="form-group" id="channelCodeGroup"><label>渠道八码<span class="required" id="channelCodeStar">*</span></label><input type="text" id="channelCode" placeholder="00开头的10位数字" maxlength="10"></div>
         <div class="form-group full"><label>产品明细<span class="required">*</span></label>
@@ -93,6 +96,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Ya
   <div class="footer">浙江省产品需求提报系统 · v2.0</div>
 </div>
 <div id="toastContainer"></div>
+<datalist id="channelDatalist"></datalist>
 
 <script>
 var SB_URL = 'https://hrehnrlswtgkucoeoezb.supabase.co/rest/v1';
@@ -377,7 +381,40 @@ function resetForm() {
 function newSubmission() { resetForm(); document.getElementById('formCard').style.display = 'block'; document.getElementById('successCard').style.display = 'none'; }
 function endSubmission() { document.getElementById('successMsg').textContent += ' | 感谢提报！'; }
 
-(function() { populateCities(); loadProducts(); onDeliveryChannelChange(); })();
+var channelNames = [];
+
+function initChannelDatalist() {
+  api('GET', '/channels?select=full_name&order=full_name')
+    .then(function(data) { channelNames = (data || []).map(function(c) { return c.full_name; }); })
+    .catch(function() {});
+}
+
+function showChannelSuggestions(val) {
+  var div = document.getElementById('channelSuggestions');
+  if (!div) return;
+  var kw = (val || '').trim().toLowerCase();
+  if (!kw) { div.style.display = 'none'; return; }
+  var matches = channelNames.filter(function(n) { return n.toLowerCase().indexOf(kw) >= 0; }).slice(0, 8);
+  if (matches.length === 0) { div.style.display = 'none'; return; }
+  div.innerHTML = '';
+  matches.forEach(function(n) {
+    var item = document.createElement('div');
+    var idx = n.toLowerCase().indexOf(kw);
+    item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
+    item.onmousedown = function() { document.getElementById('channelName').value = n; div.style.display = 'none'; };
+    div.appendChild(item);
+  });
+  div.style.display = 'block';
+}
+
+function hideChannelSuggestions() {
+  setTimeout(function() {
+    var div = document.getElementById('channelSuggestions');
+    if (div) div.style.display = 'none';
+  }, 150);
+}
+
+(function() { populateCities(); loadProducts(); onDeliveryChannelChange(); initChannelDatalist(); })();
 </script>
 </body>
 </html>
