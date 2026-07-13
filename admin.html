@@ -1411,17 +1411,23 @@ function showChannelSuggestions(val) {
   if (!div) return;
   var kw = (val || '').trim().toLowerCase();
   if (!kw) { div.style.display = 'none'; return; }
-  var matches = channelNames.filter(function(n) { return n.toLowerCase().indexOf(kw) >= 0; }).slice(0, 8);
-  if (matches.length === 0) { div.style.display = 'none'; return; }
+  var allMatches = channelNames.filter(function(n) { return n.toLowerCase().indexOf(kw) >= 0; });
+  if (allMatches.length === 0) { div.style.display = 'none'; return; }
+  var matches = allMatches.slice(0, 20);
   div.innerHTML = '';
   matches.forEach(function(n) {
     var item = document.createElement('div');
-    // highlight matched text
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
     item.onmousedown = function() { document.getElementById('channelName').value = n; div.style.display = 'none'; };
     div.appendChild(item);
   });
+  if (allMatches.length > 20) {
+    var more = document.createElement('div');
+    more.style.cssText = 'color:#999;font-size:11px;cursor:default;';
+    more.textContent = '... 还有 ' + (allMatches.length - 20) + ' 条，请继续输入缩小范围';
+    div.appendChild(more);
+  }
   div.style.display = 'block';
 }
 
