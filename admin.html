@@ -645,17 +645,45 @@ function toggleAllWlChannels(cb) {
 }
 
 function toggleAllRecords(cb) {
-  document.querySelectorAll('.record-cb').forEach(function(c) { c.checked = cb.checked; });
+  var filtered = getFilteredList();
+  if (cb.checked) { filtered.forEach(function(r) { selectedRecords[r.id] = true; }); }
+  else { selectedRecords = {}; }
+  renderRecords();
 }
 
-function getCheckedRecordIds() {
-  return Array.from(document.querySelectorAll('.record-cb:checked')).map(function(c) { return parseInt(c.value); });
+function toggleRecordCb(id, cb) {
+  if (cb.checked) selectedRecords[id] = true; else delete selectedRecords[id];
+}
+
+function getFilteredList() {
+  var list = demandList;
+  Object.keys(colFilters).forEach(function(field) {
+    var vals = colFilters[field];
+    if (!vals || (Array.isArray(vals) && vals.length === 0)) return;
+    if (!Array.isArray(vals)) vals = [vals];
+    if (field === 'in_stock') {
+      var boolVals = vals.map(function(v) { return v === '有库存'; });
+      list = list.filter(function(r){ return boolVals.indexOf(r.in_stock) >= 0; });
+    } else if (field === 'time') {
+      list = list.filter(function(r){ return vals.indexOf(new Date(r.created_at).toLocaleDateString('zh-CN')) >= 0; });
+    } else if (field === 'quantity') {
+      list = list.filter(function(r){ return vals.indexOf(String(r.quantity)) >= 0; });
+    } else if (field === 'reason') {
+      list = list.filter(function(r){ return vals.some(function(v) { return (r.reason || '').toLowerCase().indexOf(v.toLowerCase()) >= 0; }); });
+    } else if (field === 'channel_name' || field === 'channel_code' || field === 'product') {
+      list = list.filter(function(r){ return vals.some(function(v) { return (r[field] || '').toLowerCase().indexOf(v.toLowerCase()) >= 0; }); });
+    } else {
+      list = list.filter(function(r){ return vals.indexOf(r[field]) >= 0; });
+    }
+  });
+  return list;
 }
 
 function batchDeleteRecords() {
-  var ids = getCheckedRecordIds();
+  var ids = Object.keys(selectedRecords).map(Number);
   if (ids.length === 0) { showToast('请先勾选记录', 'error'); return; }
   if (!confirm('确定删除选中的 ' + ids.length + ' 条记录？')) return;
+  selectedRecords = {};
   var i = 0;
   function delNext() {
     if (i >= ids.length) { loadAndRender(); showToast('已删除' + ids.length + '条记录', 'success'); return; }
@@ -770,9 +798,10 @@ function updateStats() {
 var colFilters = {}; // { field: value }
 var page = 1, pageSize = 10;
 var productPage = 1, productPageSize = 10;
+var selectedRecords = {}; // { id: true } 跨页选中记录
 
 function clearAllFilters() {
-  page = 1;
+  page = 1; selectedRecords = {};
   colFilters = {};
   renderRecords();
   showToast('已清除所有筛选', 'info');
@@ -842,7 +871,7 @@ function filterColOptions(inp) {
 }
 
 function toggleColVal(field, value, cb) {
-  page = 1;
+  page = 1; selectedRecords = {};
   if (!colFilters[field]) colFilters[field] = [];
   if (cb.checked) { if (colFilters[field].indexOf(value) < 0) colFilters[field].push(value); }
   else { colFilters[field] = colFilters[field].filter(function(v) { return v !== value; }); }
@@ -851,14 +880,14 @@ function toggleColVal(field, value, cb) {
 }
 
 function clearColFilter(field) {
-  page = 1;
+  page = 1; selectedRecords = {};
   delete colFilters[field];
   document.querySelector('.col-filter-popup').remove();
   renderRecords();
 }
 
 function selAllColOpts(cb, field) {
-  page = 1;
+  page = 1; selectedRecords = {};
   var popup = cb.closest('.col-filter-popup');
   var newVals = [];
   popup.querySelectorAll('.cf-cb').forEach(function(c) {
@@ -880,26 +909,7 @@ function goPage(dir) {
 }
 
 function renderRecords() {
-  var list = demandList;
-  Object.keys(colFilters).forEach(function(field) {
-    var vals = colFilters[field];
-    if (!vals || (Array.isArray(vals) && vals.length === 0)) return;
-    if (!Array.isArray(vals)) vals = [vals];
-    if (field === 'in_stock') {
-      var boolVals = vals.map(function(v) { return v === '有库存'; });
-      list = list.filter(function(r){ return boolVals.indexOf(r.in_stock) >= 0; });
-    } else if (field === 'time') {
-      list = list.filter(function(r){ return vals.indexOf(new Date(r.created_at).toLocaleDateString('zh-CN')) >= 0; });
-    } else if (field === 'quantity') {
-      list = list.filter(function(r){ return vals.indexOf(String(r.quantity)) >= 0; });
-    } else if (field === 'reason') {
-      list = list.filter(function(r){ return vals.some(function(v) { return (r.reason || '').toLowerCase().indexOf(v.toLowerCase()) >= 0; }); });
-    } else if (field === 'channel_name' || field === 'channel_code' || field === 'product') {
-      list = list.filter(function(r){ return vals.some(function(v) { return (r[field] || '').toLowerCase().indexOf(v.toLowerCase()) >= 0; }); });
-    } else {
-      list = list.filter(function(r){ return vals.indexOf(r[field]) >= 0; });
-    }
-  });
+  var list = getFilteredList();
   // 分页
   var total = list.length;
   var maxPage = Math.max(1, Math.ceil(total / pageSize));
@@ -907,11 +917,19 @@ function renderRecords() {
   var start = (page - 1) * pageSize;
   var paged = list.slice(start, start + pageSize);
 
+  // 更新全选复选框状态
+  var allCb = document.querySelector('thead input[type=checkbox][onchange*="toggleAllRecords"]');
+  if (allCb) {
+    var selCount = list.filter(function(r) { return selectedRecords[r.id]; }).length;
+    allCb.checked = (total > 0 && selCount === total);
+    allCb.indeterminate = (selCount > 0 && selCount < total);
+  }
+
   var tbody = document.getElementById('recordsTableBody');
   var empty = document.getElementById('recordsEmpty');
   var pageInfo = document.getElementById('pageInfo');
   tbody.innerHTML = '';
-  if (total === 0) { empty.style.display = 'block'; document.getElementById('paginationBar').style.display = 'none'; return; }
+  if (total === 0) { selectedRecords = {}; empty.style.display = 'block'; document.getElementById('paginationBar').style.display = 'none'; return; }
   empty.style.display = 'none';
   document.getElementById('paginationBar').style.display = 'flex';
   pageInfo.textContent = '第 ' + page + '/' + maxPage + ' 页，共 ' + total + ' 条';
@@ -921,8 +939,9 @@ function renderRecords() {
     if (!r.in_stock) tr.className = 'oos-row';
     var time = r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '—';
     var cn = escapeHTML(r.channel_name), pn = escapeHTML(r.product), rsn = escapeHTML(r.reason||'—');
+    var checked = selectedRecords[r.id] ? ' checked' : '';
     tr.innerHTML =
-      '<td><input type="checkbox" class="record-cb" value="' + r.id + '"></td>' +
+      '<td><input type="checkbox" class="record-cb" value="' + r.id + '" onchange="toggleRecordCb(' + r.id + ',this)"' + checked + '></td>' +
       '<td>' + idx + '</td><td style="font-size:11px;">' + time + '</td><td>' + r.city + '</td><td>' + escapeHTML(r.reporter) + '</td>' +
       '<td title="' + cn + '">' + cn + '</td><td>' + r.delivery_channel + '</td><td>' + r.channel_code + '</td>' +
       '<td title="' + pn + '">' + pn + '</td>' +
@@ -1043,7 +1062,7 @@ function exportToExcel() {
 }
 
 function getCheckedOrAllRecords() {
-  var ids = Array.from(document.querySelectorAll('.record-cb:checked')).map(function(c) { return parseInt(c.value); });
+  var ids = Object.keys(selectedRecords).map(Number);
   if (ids.length > 0) return demandList.filter(function(r) { return ids.indexOf(r.id) >= 0; });
   return demandList;
 }
