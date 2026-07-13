@@ -477,13 +477,6 @@ function showChannelSuggestionsAt(val, div, inp) {
   div.style.display = 'block';
 }
 
-function hideChannelSuggestions() {
-  setTimeout(function() {
-    var div = document.getElementById('channelSuggestions');
-    if (div) div.style.display = 'none';
-  }, 150);
-}
-
 function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
 (function() { populateCities(); loadProducts().then(function(){addChannelGroup();}); initChannelDatalist(); })();
