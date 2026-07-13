@@ -1395,7 +1395,12 @@ function importChannels(e) {
 
 var channelNames = [];
 
-function fetchAllChannelNames() {
+function fetchAllChannelNames(force) {
+  var cache = localStorage.getItem('channelNamesCache');
+  if (!force && cache) {
+    try { channelNames = JSON.parse(cache); } catch(e) { channelNames = []; }
+    return;
+  }
   channelNames = [];
   var offset = 0;
   function next() {
@@ -1404,13 +1409,14 @@ function fetchAllChannelNames() {
         if (!data || data.length === 0) return;
         for (var i = 0; i < data.length; i++) { channelNames.push(data[i].full_name); }
         if (data.length >= 1000) { offset += 1000; next(); }
+        else { localStorage.setItem('channelNamesCache', JSON.stringify(channelNames)); }
       }).catch(function() {});
   }
   next();
 }
 
-function initChannelDatalist() { fetchAllChannelNames(); }
-function updateChannelDatalist() { fetchAllChannelNames(); }
+function initChannelDatalist() { fetchAllChannelNames(false); }
+function updateChannelDatalist() { fetchAllChannelNames(true); }
 
 function showChannelSuggestions(val) {
   var div = document.getElementById('channelSuggestions');
