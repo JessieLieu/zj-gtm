@@ -358,10 +358,12 @@ function loadProducts() {
 }
 
 function populateProductSelect(sel) {
+  var prevVal = sel.value;
   var group = sel.closest('.channel-group');
   var dcSel = group ? group.querySelector('.ch-delivery') : null;
   var dc = dcSel ? dcSel.value : '';
   while (sel.options.length > 1) sel.remove(1);
+  var found = false;
   productList.forEach(function(p) {
     // 演示样机/礼品仅太力通路可选
     if ((p.category === '演示样机' || p.category === '哑机' || p.category === '礼品') && dc !== '太力') return;
@@ -372,7 +374,9 @@ function populateProductSelect(sel) {
     opt.textContent = label;
     if (!p.in_stock) opt.style.color = '#e74c3c';
     sel.appendChild(opt);
+    if (p.name === prevVal) found = true;
   });
+  if (found) sel.value = prevVal;
 }
 
 function loadProductsIntoSelect() {

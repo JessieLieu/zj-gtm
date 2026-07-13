@@ -124,10 +124,12 @@ function api(method, path, body) {
 }
 
 function populateProductSelect(sel) {
+  var prevVal = sel.value;
   var group = sel.closest('.channel-group');
   var dcSel = group ? group.querySelector('.ch-delivery') : null;
   var dc = dcSel ? dcSel.value : '';
   while (sel.options.length > 1) sel.remove(1);
+  var found = false;
   productList.forEach(function(p) {
     if ((p.category === '演示样机' || p.category === '哑机' || p.category === '礼品') && dc !== '太力') return;
     var opt = document.createElement('option');
@@ -137,7 +139,9 @@ function populateProductSelect(sel) {
     opt.textContent = label;
     if (!p.in_stock) opt.style.color = '#e74c3c';
     sel.appendChild(opt);
+    if (p.name === prevVal) found = true;
   });
+  if (found) sel.value = prevVal;
 }
 
 var CAT_ORDER = { '销售机': 0, '演示样机': 1, '哑机': 2, '礼品': 3 };
