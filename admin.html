@@ -1394,12 +1394,7 @@ function importChannels(e) {
 }
 
 function updateChannelDatalist() {
-  var dl = document.getElementById('channelDatalist');
-  if (!dl) return;
-  dl.innerHTML = '';
-  channelList.forEach(function(c) { var o = document.createElement('option'); o.value = c.full_name; dl.appendChild(o); });
-  // Also update index.html's datalist if it exists
-  var dl2 = parent.document ? parent.document.getElementById('channelDatalist') : null;
+  channelNames = channelList.map(function(c) { return c.full_name; });
 }
 
 // Load channel datalist on startup
