@@ -152,7 +152,7 @@ function sortProductList() {
 
 function loadProducts() {
   document.getElementById('loadStatus').textContent = '加载中...';
-  api('GET', '/products?select=*&order=name')
+  return api('GET', '/products?select=*&order=name')
     .then(function(data) {
       productList = data || [];
       sortProductList();
