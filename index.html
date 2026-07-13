@@ -433,6 +433,8 @@ function hideChannelSuggestions() {
   }, 150);
 }
 
+function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
 (function() { populateCities(); loadProducts(); onDeliveryChannelChange(); initChannelDatalist(); })();
 </script>
 </body>
