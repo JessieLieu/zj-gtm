@@ -39,6 +39,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Ya
 .product-entry input[type=number] { width: 72px; height: 40px; padding: 0 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; outline: none; }
 .product-entry input[type=number]:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,.08); }
 .entry-hint { white-space: nowrap; }
+.channel-group { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fafbfc; }
+.channel-group .ch-title { font-size: 13px; font-weight: 600; color: #0f3460; margin-bottom: 8px; }
+.ch-group-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 6px; }
+.ch-group-form .form-group { flex: 1; min-width: 100px; }
+.ch-group-form input, .ch-group-form select { height: 36px; padding: 0 6px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; font-family: inherit; }
 .channel-suggestions { position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.1); z-index: 170; font-size: 14px; }
 .channel-suggestions div { padding: 8px 12px; cursor: pointer; }
 .channel-suggestions div:hover { background: #f0f4ff; color: #0f3460; }
@@ -72,18 +77,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Ya
       <div class="form-grid">
         <div class="form-group"><label>地市<span class="required">*</span></label><select id="city" required><option value="">请选择地市</option></select></div>
         <div class="form-group"><label>填报人<span class="required">*</span></label><input type="text" id="reporter" placeholder="请输入姓名" required></div>
-        <div class="form-group"><label>渠道名称<span class="required">*</span></label><div style="position:relative;"><input type="text" id="channelName" placeholder="请输入渠道名称" autocomplete="off" required oninput="showChannelSuggestions(this.value)" onfocus="showChannelSuggestions(this.value)" onblur="hideChannelSuggestions()"><div id="channelSuggestions" class="channel-suggestions" style="display:none;"></div></div></div>
-        <div class="form-group"><label>提货通路<span class="required">*</span></label><select id="deliveryChannel" required onchange="onDeliveryChannelChange()"><option value="">请选择提货通路</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>
-        <div class="form-group" id="channelCodeGroup"><label>渠道八码<span class="required" id="channelCodeStar">*</span></label><input type="text" id="channelCode" placeholder="00开头的10位数字" maxlength="10"></div>
-        <div class="form-group full"><label>产品明细<span class="required">*</span></label>
-          <div id="categoryHint" style="font-size:12px;color:#e67e22;margin-bottom:6px;display:none;">⚠️ 演示样机 / 哑机 / 礼品 仅限太力通路提货，当前通路不可选</div>
-          <div id="productEntries">
-            <div class="product-entry"><select required onchange="onProductChange(this)"><option value="">请选择产品</option></select><input type="number" placeholder="数量" required min="1" value="1" onchange="onQuantityChange(this)"><button type="button" class="btn btn-outline btn-sm" onclick="removeProductEntry(this)" title="移除" style="color:#e74c3c;border-color:#e74c3c;">✕</button><span class="entry-hint" style="font-size:11px;color:#e74c3c;display:none;"></span></div>
-          </div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="addProductEntry()" style="margin-top:8px;">➕ 添加产品</button>
-        </div>
-        <div class="form-group full"><label>提报原因<span style="color:#999;font-weight:400;">（选填）</span></label><input type="text" id="reason" placeholder="请说明需求原因（选填）" maxlength="200"></div>
       </div>
+        <div id="channelGroups"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addChannelGroup()" style="margin-top:8px;">➕ 添加渠道</button>
+        <div id="categoryHint" style="font-size:12px;color:#e67e22;margin-top:8px;display:none;">⚠️ 演示样机 / 哑机 / 礼品 仅限太力通路提货，当前通路不可选</div>
+        <div class="form-group" style="margin-top:12px;"><label>提报原因<span style="color:#999;font-weight:400;">（选填）</span></label><input type="text" id="reason" placeholder="请说明需求原因（选填）" maxlength="200"></div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" id="submitBtn">✅ 提交需求</button>
         <button type="button" class="btn btn-outline" onclick="resetForm()">🔄 重置</button>
@@ -126,7 +124,9 @@ function api(method, path, body) {
 }
 
 function populateProductSelect(sel) {
-  var dc = document.getElementById('deliveryChannel').value;
+  var group = sel.closest('.channel-group');
+  var dcSel = group ? group.querySelector('.ch-delivery') : null;
+  var dc = dcSel ? dcSel.value : '';
   while (sel.options.length > 1) sel.remove(1);
   productList.forEach(function(p) {
     if ((p.category === '演示样机' || p.category === '哑机' || p.category === '礼品') && dc !== '太力') return;
@@ -156,7 +156,7 @@ function loadProducts() {
     .then(function(data) {
       productList = data || [];
       sortProductList();
-      document.querySelectorAll('#productEntries .product-entry select').forEach(populateProductSelect);
+      document.querySelectorAll('.channel-group .product-entry select').forEach(populateProductSelect);
       document.getElementById('loadStatus').textContent = '';
     })
     .catch(function(e) {
@@ -165,7 +165,32 @@ function loadProducts() {
     });
 }
 
-function addProductEntry() {
+function addChannelGroup() {
+  var container = document.getElementById('channelGroups');
+  var idx = container.querySelectorAll('.channel-group').length + 1;
+  var div = document.createElement('div');
+  div.className = 'channel-group';
+  div.innerHTML =
+    '<div class="ch-title">📋 渠道 ' + idx + ' <button type="button" class="btn btn-danger btn-sm ch-remove" onclick="removeChannelGroup(this)">✕ 移除</button></div>' +
+    '<div class="ch-group-form">' +
+      '<div class="form-group"><label>渠道名称<span class="required">*</span></label><div style="position:relative;"><input type="text" class="ch-name" placeholder="请输入渠道名称" autocomplete="off" required oninput="showChSuggest(this)" onfocus="showChSuggest(this)" onblur="hideChSuggest(this)"><div class="channel-suggestions" style="display:none;"></div></div></div>' +
+      '<div class="form-group"><label>提货通路<span class="required">*</span></label><select class="ch-delivery" required onchange="onChDeliveryChange(this)"><option value="">请选择</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>' +
+      '<div class="form-group ch-code-group"><label>渠道八码<span class="ch-code-star required" style="color:#e74c3c;">*</span></label><input type="text" class="ch-code" placeholder="00开头的10位数字" maxlength="10"></div>' +
+    '</div>' +
+    '<div class="products-in-ch">' +
+      '<div class="product-entry"><select required onchange="onProductChange(this)"><option value="">请选择产品</option></select><input type="number" placeholder="数量" required min="1" value="1" onchange="onQuantityChange(this)"><button type="button" class="btn btn-outline btn-sm" onclick="removeProductEntry(this)" title="移除" style="color:#e74c3c;border-color:#e74c3c;">✕</button><span class="entry-hint" style="font-size:11px;color:#e74c3c;display:none;"></span></div>' +
+    '</div>' +
+    '<button type="button" class="btn btn-outline btn-sm" onclick="addProductEntryToGroup(this.parentElement)" style="margin-top:6px;">➕ 添加产品</button>';
+  container.appendChild(div);
+  populateProductSelect(div.querySelector('.product-entry select'));
+  onChDeliveryChange(div.querySelector('.ch-delivery'));
+}
+
+function removeChannelGroup(btn){var gs=document.querySelectorAll('.channel-group');if(gs.length<=1){showToast('至少保留一个渠道','info');return;}btn.closest('.channel-group').remove();}
+function addProductEntryToGroup(groupEl){var c=groupEl.querySelector('.products-in-ch');var d=document.createElement('div');d.className='product-entry';d.innerHTML='<select required onchange="onProductChange(this)"><option value="">请选择产品</option></select><input type="number" placeholder="数量" required min="1" value="1" onchange="onQuantityChange(this)"><button type="button" class="btn btn-outline btn-sm" onclick="removeProductEntry(this)" title="移除" style="color:#e74c3c;border-color:#e74c3c;">✕</button><span class="entry-hint" style="font-size:11px;color:#e74c3c;display:none;"></span>';c.appendChild(d);populateProductSelect(d.querySelector('select'));}
+function addProductEntry() { addProductEntryToGroup(document.querySelector('.channel-group')); }
+
+function old_addProductEntry() {
   var container = document.getElementById('productEntries');
   var div = document.createElement('div');
   div.className = 'product-entry';
@@ -175,24 +200,40 @@ function addProductEntry() {
 }
 
 function removeProductEntry(btn) {
-  var entries = document.querySelectorAll('#productEntries .product-entry');
+  var entries = btn.closest('.products-in-ch').querySelectorAll('.product-entry');
   if (entries.length <= 1) { showToast('至少保留一个产品', 'info'); return; }
   btn.parentElement.remove();
 }
 
-function onDeliveryChannelChange() {
-  var v = document.getElementById('deliveryChannel').value;
-  var group = document.getElementById('channelCodeGroup');
-  var input = document.getElementById('channelCode');
-  var star = document.getElementById('channelCodeStar');
+function onChDeliveryChange(sel) {
+  var group = sel.closest('.channel-group');
+  var codeGroup = group.querySelector('.ch-code-group');
+  var codeInput = group.querySelector('.ch-code');
+  var codeStar = group.querySelector('.ch-code-star');
+  var v = sel.value;
   var needsCode = (v === '移动' || v === '和动力');
-  group.style.display = needsCode ? '' : 'none';
-  star.style.display = needsCode ? '' : 'none';
-  if (!needsCode) { input.value = ''; input.required = false; }
-  else { input.required = true; }
-  document.getElementById('categoryHint').style.display = (v && v !== '太力') ? 'block' : 'none';
-  document.querySelectorAll('#productEntries .product-entry select').forEach(function(sel) { populateProductSelect(sel); });
-  document.querySelectorAll('#productEntries .product-entry select').forEach(function(sel) { if (sel.value) onProductChange(sel); });
+  codeGroup.style.display = needsCode ? '' : 'none';
+  codeStar.style.display = needsCode ? '' : 'none';
+  if (!needsCode) { codeInput.value = ''; codeInput.required = false; }
+  else { codeInput.required = true; }
+  var anyNonTaili = false;
+  document.querySelectorAll('.ch-delivery').forEach(function(s) { if (s.value && s.value !== '太力') anyNonTaili = true; });
+  document.getElementById('categoryHint').style.display = anyNonTaili ? 'block' : 'none';
+  group.querySelectorAll('.product-entry select').forEach(function(ps) { populateProductSelect(ps); });
+}
+
+function onDeliveryChannelChange() {}
+
+function showChSuggest(inp) {
+  var div = inp.parentElement.querySelector('.channel-suggestions');
+  if (!div) return;
+  showChannelSuggestionsAt(inp.value, div, inp);
+}
+function hideChSuggest(inp) {
+  setTimeout(function() {
+    var div = inp.parentElement.querySelector('.channel-suggestions');
+    if (div) div.style.display = 'none';
+  }, 150);
 }
 
 function onProductChange(sel) {
@@ -201,8 +242,9 @@ function onProductChange(sel) {
   var hint = sel.parentElement.querySelector('.entry-hint');
   hint.style.display = (p && !p.in_stock) ? 'inline' : 'none';
   if (p && !p.in_stock) hint.textContent = '⚠️ 缺货';
-  var dc = document.getElementById('deliveryChannel').value;
-  var cn = document.getElementById('channelName').value.trim();
+  var group = sel.closest('.channel-group');
+  var dc = group ? (group.querySelector('.ch-delivery') ? group.querySelector('.ch-delivery').value : '') : '';
+  var cn = group ? (group.querySelector('.ch-name') ? group.querySelector('.ch-name').value.trim() : '') : '';
   var effLimit = getEffectiveLimit(p, dc);
   if (effLimit) {
     var checkFn = effLimit.level === 'customer' ? getCustomerTodayUsed : getChannelTodayUsed;
@@ -292,56 +334,57 @@ function submitDemand(e) {
   e.preventDefault();
   var btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = '提交中...';
-
   var city = document.getElementById('city').value;
   var reporter = document.getElementById('reporter').value.trim();
-  var channelName = document.getElementById('channelName').value.trim();
-  var deliveryChannel = document.getElementById('deliveryChannel').value;
-  var channelCode = document.getElementById('channelCode').value.trim();
   var reason = document.getElementById('reason').value.trim();
 
-  // 收集所有产品条目
-  var entries = document.querySelectorAll('#productEntries .product-entry');
-  var items = [];
-  var productNames = [];
-  for (var i = 0; i < entries.length; i++) {
-    var sel = entries[i].querySelector('select');
-    var qtyInp = entries[i].querySelector('input');
-    var pn = sel.value;
-    var qty = parseInt(qtyInp.value) || 0;
-    if (!pn) { showToast('请选择产品', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
-    if (qty < 1) { showToast('产品数量须≥1', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
-    var pObj = productList.find(function(x){ return x.name === pn; });
-    items.push({product: pn, quantity: qty, in_stock: pObj ? pObj.in_stock : true, pObj: pObj});
-    productNames.push(pn + ' × ' + qty);
+  var groups = document.querySelectorAll('.channel-group');
+  var allRecords = [];
+  var chNames = [];
+
+  for (var g = 0; g < groups.length; g++) {
+    var grp = groups[g];
+    var chName = grp.querySelector('.ch-name').value.trim();
+    var deliveryChannel = grp.querySelector('.ch-delivery').value;
+    var channelCode = grp.querySelector('.ch-code').value.trim();
+    if (!chName) { showToast('渠道' + (g+1) + '：请输入渠道名称', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
+    if (!deliveryChannel) { showToast('渠道' + (g+1) + '：请选择提货通路', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
+    var needsCode = (deliveryChannel === '移动' || deliveryChannel === '和动力');
+    if (needsCode) {
+      if (!/^00\d{8}$/.test(channelCode)) { showToast('渠道' + (g+1) + '：八码须为00开头的10位数字', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
+    } else { channelCode = ''; }
+    var entries = grp.querySelectorAll('.product-entry');
+    for (var i = 0; i < entries.length; i++) {
+      var sel = entries[i].querySelector('select');
+      var qtyInp = entries[i].querySelector('input');
+      var pn = sel.value;
+      var qty = parseInt(qtyInp.value) || 0;
+      if (!pn) { showToast('渠道' + (g+1) + '：请选择产品', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
+      if (qty < 1) { showToast('渠道' + (g+1) + '：产品数量须≥1', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
+      var pObj = productList.find(function(x){ return x.name === pn; });
+      allRecords.push({city: city, reporter: reporter, channel_name: chName, delivery_channel: deliveryChannel, channel_code: channelCode, product: pn, in_stock: pObj ? pObj.in_stock : true, quantity: qty, reason: reason, pObj: pObj});
+    }
+    chNames.push(chName);
   }
 
-  // 八码验证：仅移动/和动力需要
-  var needsCode = (deliveryChannel === '移动' || deliveryChannel === '和动力');
-  if (needsCode) {
-    if (!/^00\d{8}$/.test(channelCode)) { showToast('渠道八码须为00开头的10位数字', 'error'); btn.disabled = false; btn.textContent = '✅ 提交需求'; return false; }
-  } else {
-    channelCode = ''; // 非移动/和动力不传八码
-  }
-
-  // 合并同产品数量后逐产品检查三级上限
   var merged = {};
-  items.forEach(function(it) {
-    if (!merged[it.product]) merged[it.product] = {product: it.product, quantity: 0, pObj: it.pObj};
-    merged[it.product].quantity += it.quantity;
+  allRecords.forEach(function(r) {
+    var k = r.product + '|||' + r.delivery_channel + '|||' + r.channel_name;
+    if (!merged[k]) merged[k] = {product: r.product, channel: r.delivery_channel, chName: r.channel_name, quantity: 0, pObj: r.pObj};
+    merged[k].quantity += r.quantity;
   });
   var uniqItems = Object.values(merged);
   function checkAll(idx) {
     if (idx >= uniqItems.length) { doSubmit(); return; }
     var item = uniqItems[idx];
-    var effLimit = getEffectiveLimit(item.pObj, deliveryChannel);
+    var effLimit = getEffectiveLimit(item.pObj, item.channel);
     if (!effLimit) { checkAll(idx + 1); return; }
     var checkFn = effLimit.level === 'customer' ? getCustomerTodayUsed : getChannelTodayUsed;
-    var checkKey = effLimit.level === 'customer' ? channelName : deliveryChannel;
-    var levelLabel = effLimit.level === 'customer' ? '该客户' : (effLimit.level === 'channel' ? deliveryChannel : '全局');
+    var checkKey = effLimit.level === 'customer' ? item.chName : item.channel;
+    var levelLabel = effLimit.level === 'customer' ? '该客户' : (effLimit.level === 'channel' ? item.channel : '全局');
     checkFn(item.product, checkKey).then(function(used) {
       if (used + item.quantity > effLimit.limit) {
-        showToast('⚠️ ' + item.product + ' 合计' + item.quantity + '件 超出' + levelLabel + '今日上限！已提' + used + '件，上限' + effLimit.limit + '件', 'error');
+        showToast('⚠️ ' + item.product + '(' + item.chName + ') 合计' + item.quantity + '件 超出' + levelLabel + '今日上限', 'error');
         btn.disabled = false; btn.textContent = '✅ 提交需求';
         return;
       }
@@ -351,14 +394,14 @@ function submitDemand(e) {
   checkAll(0);
 
   function doSubmit() {
-    var records = items.map(function(it) {
-      return {city: city, reporter: reporter, channel_name: channelName, delivery_channel: deliveryChannel, channel_code: channelCode, product: it.product, in_stock: it.in_stock, quantity: it.quantity, reason: reason};
+    var postData = allRecords.map(function(r) {
+      return {city: r.city, reporter: r.reporter, channel_name: r.channel_name, delivery_channel: r.delivery_channel, channel_code: r.channel_code, product: r.product, in_stock: r.in_stock, quantity: r.quantity, reason: r.reason};
     });
-    api('POST', '/demands', records)
+    api('POST', '/demands', postData)
       .then(function() {
         document.getElementById('formCard').style.display = 'none';
         document.getElementById('successCard').style.display = 'block';
-        document.getElementById('successMsg').textContent = '地市：' + city + ' | ' + productNames.join(', ');
+        document.getElementById('successMsg').textContent = '地市：' + city + ' | 渠道：' + chNames.length + '个 | 共' + postData.length + '条';
         btn.disabled = false; btn.textContent = '✅ 提交需求';
       })
       .catch(function(err) {
@@ -370,13 +413,13 @@ function submitDemand(e) {
 }
 
 function resetForm() {
-  document.getElementById('demandForm').reset();
+  document.getElementById('city').value = '';
+  document.getElementById('reporter').value = '';
+  document.getElementById('reason').value = '';
   document.getElementById('formCard').style.display = '';
   document.getElementById('successCard').style.display = 'none';
-  var container = document.getElementById('productEntries');
-  container.innerHTML = '<div class="product-entry"><select required onchange="onProductChange(this)"><option value="">请选择产品</option></select><input type="number" placeholder="数量" required min="1" value="1" onchange="onQuantityChange(this)"><button type="button" class="btn btn-outline btn-sm" onclick="removeProductEntry(this)" title="移除" style="color:#e74c3c;border-color:#e74c3c;">✕</button><span class="entry-hint" style="font-size:11px;color:#e74c3c;display:none;"></span></div>';
-  if (productList.length > 0) populateProductSelect(container.querySelector('select'));
-  onDeliveryChannelChange();
+  document.getElementById('channelGroups').innerHTML = '';
+  if (productList.length > 0) addChannelGroup(); else loadProducts().then(function(){addChannelGroup();});
 }
 function newSubmission() { resetForm(); document.getElementById('formCard').style.display = 'block'; document.getElementById('successCard').style.display = 'none'; }
 function endSubmission() { document.getElementById('successMsg').textContent += ' | 感谢提报！'; }
@@ -407,9 +450,11 @@ function fetchAllChannelNames() {
 
 function initChannelDatalist() { fetchAllChannelNames(); }
 
-function showChannelSuggestions(val) {
-  var div = document.getElementById('channelSuggestions');
-  if (!div) return;
+function showChannelSuggestions(val) { showChannelSuggestionsAt(val, document.getElementById('channelSuggestions'), document.getElementById('channelName')); }
+function hideChannelSuggestions() { setTimeout(function() { var d = document.getElementById('channelSuggestions'); if (d) d.style.display = 'none'; }, 150); }
+
+function showChannelSuggestionsAt(val, div, inp) {
+  if (!div || !inp) return;
   var kw = (val || '').trim().toLowerCase();
   if (!kw) { div.style.display = 'none'; return; }
   var allMatches = channelNames.filter(function(n) { return n.toLowerCase().indexOf(kw) >= 0; });
@@ -420,7 +465,7 @@ function showChannelSuggestions(val) {
     var item = document.createElement('div');
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
-    item.onmousedown = function() { document.getElementById('channelName').value = n; div.style.display = 'none'; };
+    item.onmousedown = function() { inp.value = n; div.style.display = 'none'; };
     div.appendChild(item);
   });
   if (allMatches.length > 20) {
@@ -441,7 +486,7 @@ function hideChannelSuggestions() {
 
 function escapeHTML(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
-(function() { populateCities(); loadProducts(); onDeliveryChannelChange(); initChannelDatalist(); })();
+(function() { populateCities(); loadProducts().then(function(){addChannelGroup();}); initChannelDatalist(); })();
 </script>
 </body>
 </html>
