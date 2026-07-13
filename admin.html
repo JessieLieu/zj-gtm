@@ -1393,17 +1393,24 @@ function importChannels(e) {
   e.target.value = '';
 }
 
-function updateChannelDatalist() {
-  channelNames = channelList.map(function(c) { return c.full_name; });
-}
+function updateChannelDatalist() { loadAllChannelNames(); }
 
 // Load channel datalist on startup
 var channelNames = [];
 
-function initChannelDatalist() {
-  api('GET', '/channels?select=full_name&order=full_name')
-    .then(function(data) { channelNames = (data || []).map(function(c) { return c.full_name; }); })
-    .catch(function() {});
+function initChannelDatalist() { loadAllChannelNames(); }
+
+function loadAllChannelNames() {
+  channelNames = [];
+  function fetchBatch(offset) {
+    api('GET', '/channels?select=full_name&order=full_name&limit=1000&offset=' + offset)
+      .then(function(data) {
+        if (!data || data.length === 0) return;
+        data.forEach(function(c) { channelNames.push(c.full_name); });
+        if (data.length === 1000) fetchBatch(offset + 1000);
+      }).catch(function() {});
+  }
+  fetchBatch(0);
 }
 
 function showChannelSuggestions(val) {
