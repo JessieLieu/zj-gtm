@@ -1393,20 +1393,24 @@ function importChannels(e) {
   e.target.value = '';
 }
 
-function updateChannelDatalist() {
-  api('GET', '/channels?select=full_name&order=full_name&limit=50000')
-    .then(function(data) { channelNames = (data || []).map(function(c) { return c.full_name; }); })
-    .catch(function() {});
-}
-
-// Load channel datalist on startup
 var channelNames = [];
 
-function initChannelDatalist() {
-  api('GET', '/channels?select=full_name&order=full_name&limit=50000')
-    .then(function(data) { channelNames = (data || []).map(function(c) { return c.full_name; }); })
-    .catch(function() {});
+function fetchAllChannelNames() {
+  channelNames = [];
+  var offset = 0;
+  function next() {
+    api('GET', '/channels?select=full_name&order=full_name&limit=1000&offset=' + offset)
+      .then(function(data) {
+        if (!data || data.length === 0) return;
+        for (var i = 0; i < data.length; i++) { channelNames.push(data[i].full_name); }
+        if (data.length >= 1000) { offset += 1000; next(); }
+      }).catch(function() {});
+  }
+  next();
 }
+
+function initChannelDatalist() { fetchAllChannelNames(); }
+function updateChannelDatalist() { fetchAllChannelNames(); }
 
 function showChannelSuggestions(val) {
   var div = document.getElementById('channelSuggestions');
