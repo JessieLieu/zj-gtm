@@ -1521,15 +1521,17 @@ function showChannelSuggestionsAt(val, div, inp) {
     var item = document.createElement('div');
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
-    item.onmousedown = function() {
+    var selectFn = function(e) {
+      e.preventDefault();
       inp.value = n; div.style.display = 'none';
-      // 自动填八码
       var grp = inp.closest('.channel-group');
       if (grp && channelCodeMap[n]) {
         var codeInp = grp.querySelector('.ch-code');
         if (codeInp) codeInp.value = channelCodeMap[n];
       }
     };
+    item.onmousedown = selectFn;
+    item.ontouchstart = selectFn;
     div.appendChild(item);
   });
   if (allMatches.length > 20) {
