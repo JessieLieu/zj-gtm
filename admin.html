@@ -72,8 +72,8 @@ tbody tr:hover { background: #f8f9ff; }
 .entry-hint { white-space: nowrap; }
 .channel-group { border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; margin-bottom: 12px; background: #fafbfc; }
 .channel-group .ch-title { font-size: 13px; font-weight: 600; color: #0f3460; margin-bottom: 10px; }
-.ch-group-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
-.ch-group-form .form-group { flex: 1; min-width: 120px; }
+.ch-group-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; justify-content: flex-start; }
+.ch-group-form .form-group { flex: 1; min-width: 120px; text-align: left; }
 .ch-group-form input, .ch-group-form select { height: 38px; padding: 0 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; font-family: inherit; }
 .wl-dropdown { position: relative; display: inline-flex; align-items: center; }
 .wl-dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,.12); z-index: 150; min-width: 130px; white-space: nowrap; }
@@ -82,8 +82,8 @@ tbody tr:hover { background: #f8f9ff; }
 .wl-dropdown:hover .wl-dropdown-menu { display: block; }
 .wl-dropdown-menu button { display: block; }
 .channel-suggestions { position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #d0d0d0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.1); z-index: 170; font-size: 13px; }
-.channel-suggestions div { padding: 6px 10px; cursor: pointer; }
-.channel-suggestions div:hover { background: #f0f4ff; color: #0f3460; }
+.channel-suggestions button { padding: 6px 10px; cursor: pointer; }
+.channel-suggestions button:hover { background: #f0f4ff; color: #0f3460; }
 .col-filter-btn { cursor: pointer; color: #bbb; font-size: 11px; padding: 2px; border-radius: 3px; }
 .col-filter-btn:hover { color: #0f3460; background: #e8f0fe; }
 .col-filter-popup { display: none; position: fixed; background: #fff; border: 1px solid #d0d0d0; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.18); z-index: 160; min-width: 200px; max-width: 360px; max-height: 360px; overflow-y: auto; padding: 8px 6px; }
@@ -1521,7 +1521,9 @@ function showChannelSuggestionsAt(val, div, inp) {
   var matches = allMatches.slice(0, 20);
   div.innerHTML = '';
   matches.forEach(function(n) {
-    var item = document.createElement('div');
+    var item = document.createElement('button');
+    item.type = 'button';
+    item.style.cssText = 'display:block;width:100%;text-align:left;border:none;background:none;padding:6px 10px;font-size:13px;font-family:inherit;cursor:pointer;';
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
     item.onclick = function(e) {
@@ -1538,7 +1540,7 @@ function showChannelSuggestionsAt(val, div, inp) {
   });
   if (allMatches.length > 20) {
     var more = document.createElement('div');
-    more.style.cssText = 'color:#999;font-size:11px;cursor:default;';
+    more.style.cssText = 'color:#999;font-size:11px;padding:4px 10px;';
     more.textContent = '... 还有 ' + (allMatches.length - 20) + ' 条，请继续输入缩小范围';
     div.appendChild(more);
   }
