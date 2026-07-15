@@ -211,7 +211,7 @@ tbody tr:hover { background: #f8f9ff; }
         </div>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th><input type="checkbox" onchange="toggleAllChannels(this)"></th><th>序号</th><th>客户全称</th><th>客户简称</th><th>客户编码</th><th>地市</th><th>操作</th></tr></thead><tbody id="channelTableBody"></tbody></table>
+        <table><thead><tr><th><input type="checkbox" onchange="toggleAllChannels(this)"></th><th>序号</th><th>客户全称</th><th>客户简称</th><th>客户编码</th><th>移动八码</th><th>地市</th><th>操作</th></tr></thead><tbody id="channelTableBody"></tbody></table>
       </div>
       <div class="empty-state" id="channelEmpty"><div class="empty-icon">🏢</div><p>暂无渠道数据，请导入Excel</p></div>
     </div>
@@ -1412,7 +1412,7 @@ function renderChannelTable() {
       '<td><input type="checkbox" class="channel-cb" value="' + c.id + '"></td>' +
       '<td>' + (i+1) + '</td><td>' + escapeHTML(c.full_name || '') + '</td>' +
       '<td>' + escapeHTML(c.short_name || '') + '</td><td>' + escapeHTML(c.code || '') + '</td>' +
-      '<td>' + escapeHTML(c.city || '') + '</td>' +
+      '<td>' + escapeHTML(c.yd_code || '') + '</td><td>' + escapeHTML(c.city || '') + '</td>' +
       '<td><button class="btn btn-danger btn-sm" onclick="deleteChannel(' + c.id + ')">删除</button></td>';
     tbody.appendChild(tr);
   });
@@ -1457,13 +1457,13 @@ function importChannels(e) {
       var rows = [];
       ws.eachRow(function(row) { var vals = []; row.eachCell(function(cell) { vals.push(cell.value); }); rows.push(vals); });
       if (rows.length <= 1) { showToast('Excel为空', 'error'); return; }
-      // A=客户全称 B=客户简称 C=客户编码 D=省 E=市 F=区县 G=准入状态
+      // A=客户全称 B=客户简称 C=客户编码 D=省 E=市 F=区县 G=准入状态 H=移动八码
       var chs = [];
       for (var r = 1; r < rows.length; r++) {
         var row = rows[r];
         var fn = row[0] ? String(row[0]).trim() : '';
         if (!fn) continue;
-        chs.push({ full_name: fn, short_name: row[1] ? String(row[1]).trim() : null, code: row[2] ? String(row[2]).trim() : null, province: row[3] ? String(row[3]).trim() : null, city: row[4] ? String(row[4]).trim() : null, district: row[5] ? String(row[5]).trim() : null, status: row[6] ? String(row[6]).trim() : null });
+        chs.push({ full_name: fn, short_name: row[1] ? String(row[1]).trim() : null, code: row[2] ? String(row[2]).trim() : null, province: row[3] ? String(row[3]).trim() : null, city: row[4] ? String(row[4]).trim() : null, district: row[5] ? String(row[5]).trim() : null, status: row[6] ? String(row[6]).trim() : null, yd_code: row[7] ? String(row[7]).trim() : null });
       }
       if (chs.length === 0) { showToast('未识别到渠道数据', 'error'); return; }
       api('POST', '/channels', chs)
@@ -1476,22 +1476,28 @@ function importChannels(e) {
 }
 
 var channelNames = [];
+var channelCodeMap = {}; // full_name -> yd_code
 
 function fetchAllChannelNames(force) {
   var cache = localStorage.getItem('channelNamesCache');
+  var codeCache = localStorage.getItem('channelCodeMapCache');
   if (!force && cache) {
-    try { channelNames = JSON.parse(cache); } catch(e) { channelNames = []; }
+    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache || '{}'); } catch(e) { channelNames = []; }
     return;
   }
   channelNames = [];
+  channelCodeMap = {};
   var offset = 0;
   function next() {
-    api('GET', '/channels?select=full_name&order=full_name&limit=1000&offset=' + offset)
+    api('GET', '/channels?select=full_name,yd_code&order=full_name&limit=1000&offset=' + offset)
       .then(function(data) {
         if (!data || data.length === 0) return;
-        for (var i = 0; i < data.length; i++) { channelNames.push(data[i].full_name); }
+        for (var i = 0; i < data.length; i++) {
+          channelNames.push(data[i].full_name);
+          if (data[i].yd_code) channelCodeMap[data[i].full_name] = data[i].yd_code;
+        }
         if (data.length >= 1000) { offset += 1000; next(); }
-        else { localStorage.setItem('channelNamesCache', JSON.stringify(channelNames)); }
+        else { localStorage.setItem('channelNamesCache', JSON.stringify(channelNames)); localStorage.setItem('channelCodeMapCache', JSON.stringify(channelCodeMap)); }
       }).catch(function() {});
   }
   next();
@@ -1515,7 +1521,15 @@ function showChannelSuggestionsAt(val, div, inp) {
     var item = document.createElement('div');
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
-    item.onmousedown = function() { inp.value = n; div.style.display = 'none'; };
+    item.onmousedown = function() {
+      inp.value = n; div.style.display = 'none';
+      // 自动填八码
+      var grp = inp.closest('.channel-group');
+      if (grp && channelCodeMap[n]) {
+        var codeInp = grp.querySelector('.ch-code');
+        if (codeInp) codeInp.value = channelCodeMap[n];
+      }
+    };
     div.appendChild(item);
   });
   if (allMatches.length > 20) {
