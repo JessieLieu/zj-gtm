@@ -319,14 +319,14 @@ function getCustomerTodayUsed(productName, channelName) {
 
 function getEffectiveLimit(p, channel) {
   if (!p) return null;
-  if (p.customer_limit) return {level: 'customer', limit: p.customer_limit};
+  if (p.customer_limit != null && p.customer_limit !== '') return {level: 'customer', limit: p.customer_limit};
   if (p.channel_limits) {
     try {
       var cl = typeof p.channel_limits === 'string' ? JSON.parse(p.channel_limits) : p.channel_limits;
-      if (cl[channel]) return {level: 'channel', limit: cl[channel]};
+      if (cl[channel] != null) return {level: 'channel', limit: cl[channel]};
     } catch(e) {}
   }
-  if (p.daily_limit) return {level: 'global', limit: p.daily_limit};
+  if (p.daily_limit != null && p.daily_limit !== '') return {level: 'global', limit: p.daily_limit};
   return null;
 }
 
