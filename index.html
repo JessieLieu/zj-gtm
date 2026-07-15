@@ -233,7 +233,6 @@ function onChDeliveryChange(sel) {
 function onDeliveryChannelChange() {}
 
 function showChSuggest(inp) {
-  if ('ontouchstart' in window) return;
   var div = inp.parentElement.querySelector('.channel-suggestions');
   if (!div) return;
   if (div._justSelected) { div._justSelected = false; return; }
@@ -503,12 +502,21 @@ function showChannelSuggestionsAt(val, div, inp) {
     div.appendChild(more);
   }
   div.style.display = 'block';
-  var rect = inp.getBoundingClientRect();
-  div.style.position = 'fixed';
-  div.style.left = rect.left + 'px';
-  div.style.top = (rect.bottom + 2) + 'px';
-  div.style.width = Math.max(rect.width, 200) + 'px';
   div.style.zIndex = '9999';
+  if ('ontouchstart' in window && window.innerWidth < 768) {
+    div.style.position = 'fixed';
+    div.style.left = '0'; div.style.right = '0'; div.style.bottom = '0';
+    div.style.maxHeight = '50vh';
+    div.style.width = '100%';
+    div.style.maxWidth = '100%';
+    div.style.borderRadius = '12px 12px 0 0';
+  } else {
+    var rect = inp.getBoundingClientRect();
+    div.style.position = 'fixed';
+    div.style.left = rect.left + 'px';
+    div.style.top = (rect.bottom + 2) + 'px';
+    div.style.width = Math.max(rect.width, 200) + 'px';
+  }
   setTimeout(function() {
     var closeFn = function(ev) {
       setTimeout(function() {
