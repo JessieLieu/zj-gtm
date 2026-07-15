@@ -1471,12 +1471,13 @@ function importChannels(e) {
         chs.push({ full_name: fn, short_name: row[1] ? String(row[1]).trim() : null, code: row[2] ? String(row[2]).trim() : null, province: row[3] ? String(row[3]).trim() : null, city: row[4] ? String(row[4]).trim() : null, district: row[5] ? String(row[5]).trim() : null, status: row[6] ? String(row[6]).trim() : null, yd_code: row[7] ? String(row[7]).trim() : null });
       }
       if (chs.length === 0) { showToast('未识别到渠道数据', 'error'); return; }
-      // 先清空旧数据，再导入新数据，最后清除缓存
+      // 先清空旧数据，再导入新数据，最后更新版本号
       api('DELETE', '/channels?id=gt.0').then(function() {
         api('POST', '/channels', chs)
           .then(function() {
             localStorage.removeItem('channelNamesCache');
             localStorage.removeItem('channelCodeMapCache');
+            localStorage.setItem('channelCount', chs.length);
             showToast('✅ 导入 ' + chs.length + ' 个渠道', 'success'); loadChannels();
           })
           .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
@@ -1502,10 +1503,12 @@ var channelCodeMap = {}; // full_name -> yd_code
 function fetchAllChannelNames(force) {
   var cache = localStorage.getItem('channelNamesCache');
   var codeCache = localStorage.getItem('channelCodeMapCache');
-  if (!force && cache) {
-    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache || '{}'); } catch(e) { channelNames = []; }
+  if (!force && cache && codeCache) {
+    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache); } catch(e) { channelNames = []; channelCodeMap = {}; }
     return;
   }
+  // cache 存在但无 codeCache (旧缓存) → 强制刷新
+  if (!force && cache && !codeCache) { localStorage.removeItem('channelNamesCache'); }
   channelNames = [];
   channelCodeMap = {};
   var offset = 0;
@@ -1520,7 +1523,10 @@ function fetchAllChannelNames(force) {
           if (dl) { var o = document.createElement('option'); o.value = data[i].full_name; dl.appendChild(o); }
         }
         if (data.length >= 1000) { offset += 1000; next(); }
-        else { localStorage.setItem('channelNamesCache', JSON.stringify(channelNames)); localStorage.setItem('channelCodeMapCache', JSON.stringify(channelCodeMap)); }
+        else {
+          localStorage.setItem('channelNamesCache', JSON.stringify(channelNames));
+          localStorage.setItem('channelCodeMapCache', JSON.stringify(channelCodeMap));
+        }
       }).catch(function() {});
   }
   next();
@@ -1543,27 +1549,20 @@ function showChannelSuggestionsAt(val, div, inp) {
   matches.forEach(function(n) {
     var item = document.createElement('button');
     item.type = 'button';
-    item.setAttribute('data-name', n);
-    item.setAttribute('data-code', channelCodeMap[n] || '');
     item.style.cssText = 'display:block;width:100%;text-align:left;border:none;background:none;padding:6px 10px;font-size:13px;font-family:inherit;cursor:pointer;';
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
+    item.onclick = function(e) {
+      e.stopPropagation(); e.preventDefault();
+      inp.value = n; div.style.display = 'none'; div._justSelected = true;
+      var grp = inp.closest('.channel-group');
+      if (grp && channelCodeMap[n]) {
+        var codeInp = grp.querySelector('.ch-code');
+        if (codeInp) codeInp.value = channelCodeMap[n];
+      }
+    };
     div.appendChild(item);
   });
-  div.onclick = function(e) {
-    var btn = e.target;
-    while (btn && btn.tagName !== 'BUTTON') btn = btn.parentElement;
-    if (!btn) return;
-    var n = btn.getAttribute('data-name');
-    var code = btn.getAttribute('data-code');
-    if (!n) return;
-    e.stopPropagation(); e.preventDefault();
-    inp.value = n; div.style.display = 'none'; div._justSelected = true;
-    if (code) {
-      var grp = inp.closest ? inp.closest('.channel-group') : (function(el){while(el){if(el.classList&&el.classList.contains('channel-group'))return el;el=el.parentElement;}return null;})(inp);
-      if (grp) { var ci = grp.querySelector('.ch-code'); if (ci) ci.value = code; }
-    }
-  };
   if (allMatches.length > 20) {
     var more = document.createElement('div');
     more.style.cssText = 'color:#999;font-size:11px;padding:4px 10px;';

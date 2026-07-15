@@ -441,10 +441,11 @@ var channelCodeMap = {};
 function fetchAllChannelNames() {
   var cache = localStorage.getItem('channelNamesCache');
   var codeCache = localStorage.getItem('channelCodeMapCache');
-  if (cache) {
-    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache || '{}'); } catch(e) { channelNames = []; }
+  if (cache && codeCache) {
+    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache); } catch(e) { channelNames = []; channelCodeMap = {}; }
     return;
   }
+  if (cache && !codeCache) { localStorage.removeItem('channelNamesCache'); }
   channelNames = [];
   channelCodeMap = {};
   var offset = 0;
@@ -459,7 +460,10 @@ function fetchAllChannelNames() {
           if (dl) { var o = document.createElement('option'); o.value = data[i].full_name; dl.appendChild(o); }
         }
         if (data.length >= 1000) { offset += 1000; next(); }
-        else { localStorage.setItem('channelNamesCache', JSON.stringify(channelNames)); localStorage.setItem('channelCodeMapCache', JSON.stringify(channelCodeMap)); }
+        else {
+          localStorage.setItem('channelNamesCache', JSON.stringify(channelNames));
+          localStorage.setItem('channelCodeMapCache', JSON.stringify(channelCodeMap));
+        }
       }).catch(function() {});
   }
   next();
@@ -481,27 +485,20 @@ function showChannelSuggestionsAt(val, div, inp) {
   matches.forEach(function(n) {
     var item = document.createElement('button');
     item.type = 'button';
-    item.setAttribute('data-name', n);
-    item.setAttribute('data-code', channelCodeMap[n] || '');
     item.style.cssText = 'display:block;width:100%;text-align:left;border:none;background:none;padding:8px 12px;font-size:14px;font-family:inherit;cursor:pointer;';
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
+    item.onclick = function(e) {
+      e.stopPropagation(); e.preventDefault();
+      inp.value = n; div.style.display = 'none'; div._justSelected = true;
+      var grp = inp.closest('.channel-group');
+      if (grp && channelCodeMap[n]) {
+        var codeInp = grp.querySelector('.ch-code');
+        if (codeInp) codeInp.value = channelCodeMap[n];
+      }
+    };
     div.appendChild(item);
   });
-  div.onclick = function(e) {
-    var btn = e.target;
-    while (btn && btn.tagName !== 'BUTTON') btn = btn.parentElement;
-    if (!btn) return;
-    var n = btn.getAttribute('data-name');
-    var code = btn.getAttribute('data-code');
-    if (!n) return;
-    e.stopPropagation(); e.preventDefault();
-    inp.value = n; div.style.display = 'none'; div._justSelected = true;
-    if (code) {
-      var grp = inp.closest ? inp.closest('.channel-group') : (function(el){while(el){if(el.classList&&el.classList.contains('channel-group'))return el;el=el.parentElement;}return null;})(inp);
-      if (grp) { var ci = grp.querySelector('.ch-code'); if (ci) ci.value = code; }
-    }
-  };
   if (allMatches.length > 20) {
     var more = document.createElement('div');
     more.style.cssText = 'color:#999;font-size:11px;padding:4px 12px;';
