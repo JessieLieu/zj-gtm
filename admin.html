@@ -120,7 +120,8 @@ tbody tr:hover { background: #f8f9ff; }
   #submitSuccess { padding: 20px 0; }
   .channel-group { padding: 10px; }
   .ch-group-form { flex-direction: column; gap: 6px; align-items: stretch; }
-  .ch-group-form .form-group { min-width: auto; }
+  .ch-group-form .form-group { min-width: auto; width: 100%; }
+  .ch-group-form input, .ch-group-form select { width: 100%; box-sizing: border-box; }
   .product-entry { flex-wrap: wrap; gap: 4px; }
   .product-entry select { flex: 1 1 100%; min-width: 0; font-size: 13px; height: 36px; }
   .product-entry input[type=number] { width: 56px; height: 36px; font-size: 13px; }
@@ -458,6 +459,8 @@ function onChDeliveryChange(sel) {
 function onDeliveryChannelChange() {}
 
 function showChSuggest(inp) {
+  // 手机端使用原生datalist，不弹自定义下拉
+  if ('ontouchstart' in window) return;
   var div = inp.parentElement.querySelector('.channel-suggestions');
   if (!div) return;
   if (div._justSelected) { div._justSelected = false; return; }
