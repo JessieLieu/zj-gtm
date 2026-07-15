@@ -134,15 +134,15 @@ tbody tr:hover { background: #f8f9ff; }
 <div class="header">
   <h1>📱 管理后台 · 浙江省</h1>
   <div class="header-actions">
+    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('records')">📋 提报记录</button>
     <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('submit')">📝 需求提报</button>
     <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('products')">📦 产品管理</button>
-    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('records')">📋 提报记录</button>
 	    <button class="btn btn-outline btn-sm nav-btn" onclick="switchTab('channels')">🏢 渠道管理</button>
   </div>
 </div>
 <div class="main">
   <!-- ===== TAB: 需求提报 ===== -->
-  <div class="panel active" id="panel-submit">
+  <div class="panel" id="panel-submit">
     <div class="card">
       <div class="card-title">新增需求提报</div>
       <form id="demandForm" onsubmit="return submitDemand(event)">
@@ -221,7 +221,7 @@ tbody tr:hover { background: #f8f9ff; }
     </div>
   </div>
   <!-- ===== TAB: 提报记录 ===== -->
-  <div class="panel" id="panel-records">
+  <div class="panel active" id="panel-records">
     <div class="stats-row">
       <div class="stat-card"><div class="stat-icon blue">📋</div><div><div class="stat-value" id="statTotal">0</div><div class="stat-label">总提报数</div></div></div>
       <div class="stat-card"><div class="stat-icon green">📦</div><div><div class="stat-value" id="statProducts">0</div><div class="stat-label">涉及产品数</div></div></div>
@@ -619,8 +619,8 @@ function addProduct() {
 function updateDailyLimit(name, val) {
   name = decodeURIComponent(name);
   var v = val.trim();
-  var limit = v ? parseInt(v) : null;
-  if (v && (isNaN(limit) || limit < 0)) { showToast('请输入有效数字', 'error'); loadProducts().then(renderProductTable); return; }
+  var limit = (v !== '') ? parseInt(v) : null;
+  if (v !== '' && (isNaN(limit) || limit < 0)) { showToast('请输入有效数字', 'error'); loadProducts().then(renderProductTable); return; }
   api('PATCH', '/products?name=eq.' + encodeURIComponent(name), {daily_limit: limit})
     .then(function() { loadProducts().then(renderProductTable); showToast('已更新', 'info'); })
     .catch(function(e) { showToast('更新失败', 'error'); });
@@ -629,8 +629,8 @@ function updateDailyLimit(name, val) {
 function updateCustomerLimit(name, val) {
   name = decodeURIComponent(name);
   var v = val.trim();
-  var limit = v ? parseInt(v) : null;
-  if (v && (isNaN(limit) || limit < 0)) { showToast('请输入有效数字', 'error'); loadProducts().then(renderProductTable); return; }
+  var limit = (v !== '') ? parseInt(v) : null;
+  if (v !== '' && (isNaN(limit) || limit < 0)) { showToast('请输入有效数字', 'error'); loadProducts().then(renderProductTable); return; }
   api('PATCH', '/products?name=eq.' + encodeURIComponent(name), {customer_limit: limit})
     .then(function() { loadProducts().then(renderProductTable); showToast('已更新', 'info'); })
     .catch(function(e) { showToast('更新失败', 'error'); });
@@ -643,7 +643,7 @@ function updateChannelLimit(name, channel, val) {
   var cl = {};
   try { if (p.channel_limits) cl = typeof p.channel_limits === 'string' ? JSON.parse(p.channel_limits) : p.channel_limits; } catch(e) {}
   var v = val.trim();
-  if (v) {
+  if (v !== '') {
     var n = parseInt(v);
     if (isNaN(n) || n < 0) { showToast('请输入有效数字', 'error'); loadProducts().then(renderProductTable); return; }
     cl[channel] = n;
@@ -1246,21 +1246,26 @@ function exportWaterLevelGroup(sourceList, channels, filename, label) {
   var hasYD = (channels.indexOf('移动') >= 0 || channels.indexOf('和动力') >= 0);
   var prefixCols = hasYD ? 4 : 3; // 八码列前的空列数
 
-  // 映射行（仅太力/移动/和动力）
+  // 映射行（仅太力/移动/和动力）。移动和和动力总是同时出现
   var prodMap = {};
   productList.forEach(function(p) { prodMap[p.name] = p; });
   var chLabelMap = { '太力': ['太力产品名称', 'tl_name'], '移动': ['移动产品名称', 'yd_name'], '和动力': ['和动力产品名称', 'hdl_name'] };
   var mapRows = [];
-  channels.forEach(function(ch) {
-    if (chLabelMap[ch] && filtered.some(function(r) { return r.delivery_channel === ch; })) {
-      var lb = chLabelMap[ch][0];
-      var fld = chLabelMap[ch][1];
-      var row = [];
-      for (var x = 0; x < prefixCols; x++) row.push('');
-      row.push(lb);
-      products.forEach(function(pn) { var pr = prodMap[pn]; row.push(pr && pr[fld] ? pr[fld] : ''); });
-      mapRows.push(row);
-    }
+  var hasYDorHDL = channels.some(function(c) { return c === '移动' || c === '和动力'; });
+  var mapChannels = channels.filter(function(c) { return chLabelMap[c]; });
+  // 如果含移动或和动力，确保两者都加入映射
+  if (hasYDorHDL) {
+    if (mapChannels.indexOf('移动') < 0) mapChannels.push('移动');
+    if (mapChannels.indexOf('和动力') < 0) mapChannels.push('和动力');
+  }
+  mapChannels.forEach(function(ch) {
+    var lb = chLabelMap[ch][0];
+    var fld = chLabelMap[ch][1];
+    var row = [];
+    for (var x = 0; x < prefixCols; x++) row.push('');
+    row.push(lb);
+    products.forEach(function(pn) { var pr = prodMap[pn]; row.push(pr && pr[fld] ? pr[fld] : ''); });
+    mapRows.push(row);
   });
 
   // 表头
@@ -1309,9 +1314,10 @@ function exportWaterLevelMerged() {
   var prodMap = {};
   productList.forEach(function(p) { prodMap[p.name] = p; });
   var chLabelMap = { '太力': ['太力产品名称', 'tl_name'], '移动': ['移动产品名称', 'yd_name'], '和动力': ['和动力产品名称', 'hdl_name'] };
+  var hasYDorHDL = (selectedChannels.indexOf('移动') >= 0 || selectedChannels.indexOf('和动力') >= 0);
   var mapRows = [];
   ['太力','移动','和动力'].forEach(function(ch) {
-    if (selectedChannels.indexOf(ch) >= 0 && filtered.some(function(r) { return r.delivery_channel === ch; })) {
+    if (selectedChannels.indexOf(ch) >= 0 || (hasYDorHDL && (ch === '移动' || ch === '和动力'))) {
       var row = [];
       for (var x = 0; x < prefixCols; x++) row.push('');
       row.push(chLabelMap[ch][0]);
@@ -1599,7 +1605,7 @@ function showChannelSuggestionsAt(val, div, inp) {
 }
 
 // ==================== STARTUP ====================
-(function() { populateCities(); loadProducts().then(initChannelGroups); initChannelDatalist(); })();
+(function() { loadAndRender(); initChannelDatalist(); })();
 </script>
 </body>
 </html>
