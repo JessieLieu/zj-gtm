@@ -1521,17 +1521,16 @@ function showChannelSuggestionsAt(val, div, inp) {
     var item = document.createElement('div');
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
-    var selectFn = function(e) {
-      e.preventDefault();
+    item.onclick = function(e) {
+      e.stopPropagation();
       inp.value = n; div.style.display = 'none';
+      inp.focus();
       var grp = inp.closest('.channel-group');
       if (grp && channelCodeMap[n]) {
         var codeInp = grp.querySelector('.ch-code');
         if (codeInp) codeInp.value = channelCodeMap[n];
       }
     };
-    item.onmousedown = selectFn;
-    item.ontouchstart = selectFn;
     div.appendChild(item);
   });
   if (allMatches.length > 20) {
@@ -1541,12 +1540,17 @@ function showChannelSuggestionsAt(val, div, inp) {
     div.appendChild(more);
   }
   div.style.display = 'block';
-  // 点击外部关闭
+  // 点击外部关闭（延迟避免手机端 touch 和 blur 冲突）
   setTimeout(function() {
-    var closeFn = function(ev) { if (!div.contains(ev.target) && ev.target !== inp) { div.style.display = 'none'; document.removeEventListener('click', closeFn); document.removeEventListener('touchstart', closeFn); } };
+    var closeFn = function(ev) {
+      setTimeout(function() {
+        if (!div.contains(ev.target) && document.activeElement !== inp) {
+          div.style.display = 'none'; document.removeEventListener('click', closeFn);
+        }
+      }, 200);
+    };
     document.addEventListener('click', closeFn);
-    document.addEventListener('touchstart', closeFn);
-  }, 10);
+  }, 50);
 }
 
 // ==================== STARTUP ====================
