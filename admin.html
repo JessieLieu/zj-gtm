@@ -1550,8 +1550,8 @@ function showChannelSuggestionsAt(val, div, inp) {
   div.style.display = 'block';
   div.style.zIndex = '9999';
   if ('ontouchstart' in window && window.innerWidth < 768) {
-    // 手机端：底部弹出，避开键盘
     div.style.position = 'fixed';
+    div.style.top = 'auto';  // 清除 CSS 的 top:100%
     div.style.left = '0'; div.style.right = '0'; div.style.bottom = '0';
     div.style.maxHeight = '50vh';
     div.style.width = '100%';

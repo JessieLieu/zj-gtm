@@ -505,6 +505,7 @@ function showChannelSuggestionsAt(val, div, inp) {
   div.style.zIndex = '9999';
   if ('ontouchstart' in window && window.innerWidth < 768) {
     div.style.position = 'fixed';
+    div.style.top = 'auto';
     div.style.left = '0'; div.style.right = '0'; div.style.bottom = '0';
     div.style.maxHeight = '50vh';
     div.style.width = '100%';
