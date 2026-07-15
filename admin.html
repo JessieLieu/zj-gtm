@@ -399,7 +399,7 @@ function addChannelGroup() {
   div.innerHTML =
     '<div class="ch-title">📋 渠道 ' + idx + ' <button type="button" class="btn btn-danger btn-sm ch-remove" onclick="removeChannelGroup(this)">✕ 移除</button></div>' +
     '<div class="ch-group-form">' +
-      '<div class="form-group"><label>渠道名称<span class="required">*</span></label><div style="position:relative;"><input type="text" class="ch-name" placeholder="请输入渠道名称" autocomplete="off" required oninput="showChSuggest(this)" onfocus="showChSuggest(this)" onblur="hideChSuggest(this)"><div class="channel-suggestions" style="display:none;"></div></div></div>' +
+      '<div class="form-group"><label>渠道名称<span class="required">*</span></label><div style="position:relative;"><input type="text" class="ch-name" placeholder="请输入渠道名称" autocomplete="off" required oninput="showChSuggest(this)" onfocus="showChSuggest(this)"><div class="channel-suggestions" style="display:none;"></div></div></div>' +
       '<div class="form-group"><label>提货通路<span class="required">*</span></label><select class="ch-delivery" required onchange="onChDeliveryChange(this)"><option value="">请选择</option><option value="太力">太力</option><option value="移动">移动</option><option value="和动力">和动力</option><option value="天翼">天翼</option><option value="联通">联通</option></select></div>' +
       '<div class="form-group ch-code-group"><label>渠道八码<span class="ch-code-star required" style="color:#e74c3c;">*</span></label><input type="text" class="ch-code" placeholder="00开头的10位数字" maxlength="10"></div>' +
     '</div>' +
@@ -1541,6 +1541,12 @@ function showChannelSuggestionsAt(val, div, inp) {
     div.appendChild(more);
   }
   div.style.display = 'block';
+  // 点击外部关闭
+  setTimeout(function() {
+    var closeFn = function(ev) { if (!div.contains(ev.target) && ev.target !== inp) { div.style.display = 'none'; document.removeEventListener('click', closeFn); document.removeEventListener('touchstart', closeFn); } };
+    document.addEventListener('click', closeFn);
+    document.addEventListener('touchstart', closeFn);
+  }, 10);
 }
 
 // ==================== STARTUP ====================
