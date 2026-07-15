@@ -1540,7 +1540,14 @@ function showChannelSuggestionsAt(val, div, inp) {
     div.appendChild(more);
   }
   div.style.display = 'block';
-  // 点击外部关闭（延迟避免手机端 touch 和 blur 冲突）
+  // 固定定位在输入框下方
+  var rect = inp.getBoundingClientRect();
+  div.style.position = 'fixed';
+  div.style.left = rect.left + 'px';
+  div.style.top = (rect.bottom + 2) + 'px';
+  div.style.width = Math.max(rect.width, 200) + 'px';
+  div.style.zIndex = '9999';
+  // 点击外部关闭
   setTimeout(function() {
     var closeFn = function(ev) {
       setTimeout(function() {
