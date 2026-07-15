@@ -234,6 +234,7 @@ function onDeliveryChannelChange() {}
 function showChSuggest(inp) {
   var div = inp.parentElement.querySelector('.channel-suggestions');
   if (!div) return;
+  if (div._justSelected) { div._justSelected = false; return; }
   showChannelSuggestionsAt(inp.value, div, inp);
 }
 function hideChSuggest(inp) {
@@ -483,9 +484,8 @@ function showChannelSuggestionsAt(val, div, inp) {
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
     item.onclick = function(e) {
-      e.stopPropagation();
-      inp.value = n; div.style.display = 'none';
-      inp.focus();
+      e.stopPropagation(); e.preventDefault();
+      inp.value = n; div.style.display = 'none'; div._justSelected = true;
       var grp = inp.closest('.channel-group');
       if (grp && channelCodeMap[n]) {
         var codeInp = grp.querySelector('.ch-code');
