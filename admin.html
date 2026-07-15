@@ -1543,20 +1543,25 @@ function showChannelSuggestionsAt(val, div, inp) {
   matches.forEach(function(n) {
     var item = document.createElement('button');
     item.type = 'button';
+    item.setAttribute('data-name', n);
     item.style.cssText = 'display:block;width:100%;text-align:left;border:none;background:none;padding:6px 10px;font-size:13px;font-family:inherit;cursor:pointer;';
     var idx = n.toLowerCase().indexOf(kw);
     item.innerHTML = escapeHTML(n.substring(0, idx)) + '<b>' + escapeHTML(n.substring(idx, idx + kw.length)) + '</b>' + escapeHTML(n.substring(idx + kw.length));
-    item.onclick = function(e) {
-      e.stopPropagation(); e.preventDefault();
-      inp.value = n; div.style.display = 'none'; div._justSelected = true;
-      var grp = inp.closest('.channel-group');
-      if (grp && channelCodeMap[n]) {
-        var codeInp = grp.querySelector('.ch-code');
-        if (codeInp) codeInp.value = channelCodeMap[n];
-      }
-    };
     div.appendChild(item);
   });
+  // 事件委托：一次绑定，PC和手机都可靠
+  div.onclick = function(e) {
+    var btn = e.target.closest('button[data-name]');
+    if (!btn) return;
+    var n = btn.getAttribute('data-name');
+    e.stopPropagation(); e.preventDefault();
+    inp.value = n; div.style.display = 'none'; div._justSelected = true;
+    var grp = inp.closest('.channel-group');
+    if (grp && channelCodeMap[n]) {
+      var codeInp = grp.querySelector('.ch-code');
+      if (codeInp) codeInp.value = channelCodeMap[n];
+    }
+  };
   if (allMatches.length > 20) {
     var more = document.createElement('div');
     more.style.cssText = 'color:#999;font-size:11px;padding:4px 10px;';
