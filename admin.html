@@ -1471,9 +1471,25 @@ function importChannels(e) {
         chs.push({ full_name: fn, short_name: row[1] ? String(row[1]).trim() : null, code: row[2] ? String(row[2]).trim() : null, province: row[3] ? String(row[3]).trim() : null, city: row[4] ? String(row[4]).trim() : null, district: row[5] ? String(row[5]).trim() : null, status: row[6] ? String(row[6]).trim() : null, yd_code: row[7] ? String(row[7]).trim() : null });
       }
       if (chs.length === 0) { showToast('未识别到渠道数据', 'error'); return; }
-      api('POST', '/channels', chs)
-        .then(function() { showToast('✅ 导入 ' + chs.length + ' 个渠道', 'success'); loadChannels(); })
-        .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
+      // 先清空旧数据，再导入新数据，最后清除缓存
+      api('DELETE', '/channels?id=gt.0').then(function() {
+        api('POST', '/channels', chs)
+          .then(function() {
+            localStorage.removeItem('channelNamesCache');
+            localStorage.removeItem('channelCodeMapCache');
+            showToast('✅ 导入 ' + chs.length + ' 个渠道', 'success'); loadChannels();
+          })
+          .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
+      }).catch(function() {
+        // 表为空时 DELETE 可能失败，直接导入
+        api('POST', '/channels', chs)
+          .then(function() {
+            localStorage.removeItem('channelNamesCache');
+            localStorage.removeItem('channelCodeMapCache');
+            showToast('✅ 导入 ' + chs.length + ' 个渠道', 'success'); loadChannels();
+          })
+          .catch(function(err) { showToast('导入失败: ' + err.message, 'error'); });
+      });
     }).catch(function() { showToast('文件读取失败', 'error'); });
   };
   reader.readAsArrayBuffer(file);
