@@ -441,11 +441,10 @@ var channelCodeMap = {};
 function fetchAllChannelNames() {
   var cache = localStorage.getItem('channelNamesCache');
   var codeCache = localStorage.getItem('channelCodeMapCache');
-  if (cache && codeCache) {
-    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache); } catch(e) { channelNames = []; channelCodeMap = {}; }
+  if (cache) {
+    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache || '{}'); } catch(e) { channelNames = []; }
     return;
   }
-  if (cache && !codeCache) { localStorage.removeItem('channelNamesCache'); }
   channelNames = [];
   channelCodeMap = {};
   var offset = 0;

@@ -1503,12 +1503,10 @@ var channelCodeMap = {}; // full_name -> yd_code
 function fetchAllChannelNames(force) {
   var cache = localStorage.getItem('channelNamesCache');
   var codeCache = localStorage.getItem('channelCodeMapCache');
-  if (!force && cache && codeCache) {
-    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache); } catch(e) { channelNames = []; channelCodeMap = {}; }
+  if (!force && cache) {
+    try { channelNames = JSON.parse(cache); channelCodeMap = JSON.parse(codeCache || '{}'); } catch(e) { channelNames = []; }
     return;
   }
-  // cache 存在但无 codeCache (旧缓存) → 强制刷新
-  if (!force && cache && !codeCache) { localStorage.removeItem('channelNamesCache'); }
   channelNames = [];
   channelCodeMap = {};
   var offset = 0;
