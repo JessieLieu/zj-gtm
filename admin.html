@@ -835,13 +835,13 @@ function handleFileImport(e) {
           var custLimit = null;
           if (custLimitVal !== undefined && custLimitVal !== null && String(custLimitVal).trim() !== '') {
             custLimit = parseInt(custLimitVal);
-            if (isNaN(custLimit) || custLimit < 0) custLimit = null;
+            if (isNaN(custLimit) || custLimit < 0 || custLimit > 2000000000) custLimit = null;
           }
           var limitVal = row[4];
           var limit = null;
           if (limitVal !== undefined && limitVal !== null && String(limitVal).trim() !== '') {
             limit = parseInt(limitVal);
-            if (isNaN(limit) || limit < 0) limit = null;
+            if (isNaN(limit) || limit < 0 || limit > 2000000000) limit = null;
           }
           var tlName = row[5] ? String(row[5]).trim() : null;
           var ydName = row[6] ? String(row[6]).trim() : null;
