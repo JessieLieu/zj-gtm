@@ -815,7 +815,7 @@ function handleFileImport(e) {
         var ws = wb.getWorksheet(1);
         if (!ws) { showToast('Excel 为空', 'error'); return; }
         var rows = [];
-        ws.eachRow(function(row) { var vals = []; row.eachCell(function(cell) { vals.push(cell.value); }); rows.push(vals); });
+        ws.eachRow(function(row) { var vals = []; { for (var c = 1; c <= 8; c++) { var cell = row.getCell(c); vals.push(cell ? cell.value : null); } } rows.push(vals); });
         if (rows.length <= 1) { showToast('Excel 为空', 'error'); return; }
         var products = [];
         var skipped = 0;
@@ -1464,7 +1464,7 @@ function importChannels(e) {
       var ws = wb.getWorksheet(1);
       if (!ws) { showToast('Excel为空', 'error'); return; }
       var rows = [];
-      ws.eachRow(function(row) { var vals = []; row.eachCell(function(cell) { vals.push(cell.value); }); rows.push(vals); });
+      ws.eachRow(function(row) { var vals = []; { for (var c = 1; c <= 8; c++) { var cell = row.getCell(c); vals.push(cell ? cell.value : null); } } rows.push(vals); });
       if (rows.length <= 1) { showToast('Excel为空', 'error'); return; }
       // A=客户全称 B=客户简称 C=客户编码 D=省 E=市 F=区县 G=准入状态 H=移动八码
       var chs = [];
